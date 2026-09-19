@@ -5,9 +5,9 @@ import { updatePageMeta } from '../utils/seoHelpers';
 export const AboutPage: React.FC = () => {
   useEffect(() => {
     updatePageMeta({
-      title: 'About Toolvero — Powerful Online Tools. Simple & Fast.',
-      description: 'Learn about Toolvero, our mission to create private, blazing fast in-browser file utilities for students, developers, and creators worldwide.',
-      canonicalUrl: 'https://toolvero.com/about',
+      title: 'About QuickVero — Powerful Online Tools. Simple & Fast.',
+      description: 'Learn about QuickVero, our mission to create private, blazing fast in-browser file utilities for students, developers, and creators worldwide.',
+      canonicalUrl: 'https://quickvero.com/about',
     });
   }, []);
 
@@ -16,7 +16,7 @@ export const AboutPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-4">
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            About <span className="text-brand-600 dark:text-brand-400">Toolvero</span>
+            About <span className="text-brand-600 dark:text-brand-400">QuickVero</span>
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
             Building the next generation of web utilities: fast, private, accessible, and completely free of spam.
@@ -32,7 +32,7 @@ export const AboutPage: React.FC = () => {
             Most online converters and utility websites today are bogged down by intrusive pop-up ads, slow server queues, forced email registrations, and sketchy privacy practices.
           </p>
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm sm:text-base">
-            <strong>Toolvero</strong> was created to change that. By leveraging modern browser APIs (such as HTML5 Canvas, Web Crypto, and WebAssembly), we process images and documents directly on your device whenever possible. Your confidential files never touch our servers, guaranteeing 100% privacy and lightning-fast speed.
+            <strong>QuickVero</strong> was created to change that. By leveraging modern browser APIs (such as HTML5 Canvas, Web Crypto, and WebAssembly), we process images and documents directly on your device whenever possible. Your confidential files never touch our servers, guaranteeing 100% privacy and lightning-fast speed.
           </p>
         </div>
 

@@ -27,7 +27,7 @@ export const CloudToolNotice: React.FC<CloudToolNoticeProps> = ({ tool, file }) 
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            High-throughput media processing for {tool.name} is architected for asynchronous backend execution via Toolvero&apos;s modular API service.
+            High-throughput media processing for {tool.name} is architected for asynchronous backend execution via QuickVero&apos;s modular API service.
           </p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export const CloudToolNotice: React.FC<CloudToolNoticeProps> = ({ tool, file }) 
           To connect the production transcode cluster, configure your environment variable in <code className="text-amber-300">.env</code>:
         </p>
         <div className="p-2.5 rounded-lg bg-black/40 text-emerald-400 select-all">
-          VITE_BACKEND_API_URL=https://api.toolvero.com
+          VITE_BACKEND_API_URL=https://api.quickvero.com
         </div>
       </div>
     </div>

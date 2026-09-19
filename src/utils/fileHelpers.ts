@@ -1,5 +1,5 @@
 /**
- * Safe and modern file helpers for Toolvero
+ * Safe and modern file helpers for QuickVero
  */
 
 export function formatBytes(bytes: number, decimals: number = 2): string {

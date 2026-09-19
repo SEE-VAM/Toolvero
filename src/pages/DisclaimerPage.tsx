@@ -4,9 +4,9 @@ import { updatePageMeta } from '../utils/seoHelpers';
 export const DisclaimerPage: React.FC = () => {
   useEffect(() => {
     updatePageMeta({
-      title: 'Disclaimer — Toolvero File Utilities',
-      description: 'Legal disclaimer and limitation of liability regarding file operations on Toolvero.',
-      canonicalUrl: 'https://toolvero.com/disclaimer',
+      title: 'Disclaimer — QuickVero File Utilities',
+      description: 'Legal disclaimer and limitation of liability regarding file operations on QuickVero.',
+      canonicalUrl: 'https://quickvero.com/disclaimer',
     });
   }, []);
 
@@ -26,14 +26,14 @@ export const DisclaimerPage: React.FC = () => {
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">1. General Information</h2>
             <p>
-              The tools and information provided on Toolvero are intended solely for general productivity, personal, academic, and business utility purposes. While we strive for maximum accuracy, fidelity, and reliability, we make no guarantees that processed outputs will meet all specific compliance standards or device constraints.
+              The tools and information provided on QuickVero are intended solely for general productivity, personal, academic, and business utility purposes. While we strive for maximum accuracy, fidelity, and reliability, we make no guarantees that processed outputs will meet all specific compliance standards or device constraints.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">2. Backup Recommendation</h2>
             <p>
-              Always maintain independent backup copies of critical documents, media, or archives before performing destructive compression or format transformations. Toolvero shall not be held liable for any accidental loss of original source files.
+              Always maintain independent backup copies of critical documents, media, or archives before performing destructive compression or format transformations. QuickVero shall not be held liable for any accidental loss of original source files.
             </p>
           </section>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'toolvero_favorites';
+const STORAGE_KEY = 'quickvero_favorites';
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>(() => {

@@ -15,8 +15,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'Image Compressor Online — Compress JPG, PNG & WebP | Toolvero',
-    seoDescription: 'Compress JPG, PNG, and WebP images online with Toolvero. Reduce image size by up to 80% while preserving crisp quality right in your browser.',
+    seoTitle: 'Image Compressor Online — Compress JPG, PNG & WebP | QuickVero',
+    seoDescription: 'Compress JPG, PNG, and WebP images online with QuickVero. Reduce image size by up to 80% while preserving crisp quality right in your browser.',
     keywords: ['image compressor', 'compress jpg', 'compress png', 'compress webp', 'reduce image size', 'photo optimizer'],
     features: [
       'Adjustable quality slider from 10% to 100%',
@@ -34,11 +34,11 @@ export const TOOLS: ToolDefinition[] = [
     faqs: [
       {
         question: 'Will compressing my image reduce its visible quality?',
-        answer: 'Toolvero utilizes smart canvas compression algorithms that strip out invisible metadata and optimize color quantization. At 75%-85% quality, human eyes typically cannot distinguish any difference from the original photo.'
+        answer: 'QuickVero utilizes smart canvas compression algorithms that strip out invisible metadata and optimize color quantization. At 75%-85% quality, human eyes typically cannot distinguish any difference from the original photo.'
       },
       {
         question: 'Are my private photos uploaded to your servers?',
-        answer: 'No! Toolvero processes your images 100% locally inside your browser using HTML5 Canvas. Your photos never leave your device, ensuring complete privacy and security.'
+        answer: 'No! QuickVero processes your images 100% locally inside your browser using HTML5 Canvas. Your photos never leave your device, ensuring complete privacy and security.'
       },
       {
         question: 'What is the maximum file size supported?',
@@ -63,8 +63,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'Image Resizer Online — Resize JPG & PNG by Pixels | Toolvero',
-    seoDescription: 'Resize images online for free with Toolvero. Scale dimensions by exact pixels or percentage with aspect ratio lock directly in your browser.',
+    seoTitle: 'Image Resizer Online — Resize JPG & PNG by Pixels | QuickVero',
+    seoDescription: 'Resize images online for free with QuickVero. Scale dimensions by exact pixels or percentage with aspect ratio lock directly in your browser.',
     keywords: ['image resizer', 'resize photo', 'scale image', 'change picture dimensions', 'social media photo resizer'],
     features: [
       'Scale by exact width and height pixels',
@@ -107,8 +107,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'JPG to PNG Converter Online — Fast & Free | Toolvero',
-    seoDescription: 'Convert JPG to PNG online with Toolvero. Fast, 100% free, browser-based conversion with zero data uploads and no file limits.',
+    seoTitle: 'JPG to PNG Converter Online — Fast & Free | QuickVero',
+    seoDescription: 'Convert JPG to PNG online with QuickVero. Fast, 100% free, browser-based conversion with zero data uploads and no file limits.',
     keywords: ['jpg to png', 'jpeg to png', 'convert jpg to png', 'image format converter'],
     features: [
       'Lossless 24-bit PNG conversion',
@@ -146,7 +146,7 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'PNG to JPG Converter Online — Compact File Size | Toolvero',
+    seoTitle: 'PNG to JPG Converter Online — Compact File Size | QuickVero',
     seoDescription: 'Convert PNG to JPG online for free. Compress transparent or solid PNGs into compact JPGs with custom background color fill.',
     keywords: ['png to jpg', 'png to jpeg', 'convert png to jpg', 'reduce png size'],
     features: [
@@ -185,7 +185,7 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'WebP Converter Online — Convert JPG & PNG to WebP | Toolvero',
+    seoTitle: 'WebP Converter Online — Convert JPG & PNG to WebP | QuickVero',
     seoDescription: 'Convert JPG, PNG, and GIF images to WebP online for free. Boost SEO and site speed with next-gen image compression in your browser.',
     keywords: ['webp converter', 'convert to webp', 'jpg to webp', 'png to webp', 'next-gen image format'],
     features: [
@@ -220,7 +220,7 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'Image Cropper Online — Crop Photos with Aspect Ratios | Toolvero',
+    seoTitle: 'Image Cropper Online — Crop Photos with Aspect Ratios | QuickVero',
     seoDescription: 'Crop JPG, PNG, and WebP images online for free. Use preset social media aspect ratios or custom pixel bounding boxes.',
     keywords: ['image cropper', 'crop photo', 'square image', '16:9 crop', 'avatar crop'],
     features: [
@@ -257,8 +257,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'Instagram Video Downloader Online — Download Reels & Videos | Toolvero',
-    seoDescription: 'Download Instagram Reels, video posts and IGTV online for free with Toolvero. Save 1080p HD MP4 video or convert Instagram audio to MP3.',
+    seoTitle: 'Instagram Video Downloader Online — Download Reels & Videos | QuickVero',
+    seoDescription: 'Download Instagram Reels, video posts and IGTV online for free with QuickVero. Save 1080p HD MP4 video or convert Instagram audio to MP3.',
     keywords: ['instagram video downloader', 'instagram reels downloader', 'download ig reel', 'instagram to mp3', 'insta video download', 'reels saver'],
     features: [
       'Download Instagram Reels in original 1080p Full HD resolution',
@@ -269,7 +269,7 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy Instagram Link', description: 'Open Instagram and copy the share link of any Reel or video post.' },
-      { step: 2, title: 'Paste into Toolvero', description: 'Paste the Instagram link into the input box above or tap the Paste button.' },
+      { step: 2, title: 'Paste into QuickVero', description: 'Paste the Instagram link into the input box above or tap the Paste button.' },
       { step: 3, title: 'Click Fetch Video', description: 'Our engine instantly inspects and extracts the clean video stream.' },
       { step: 4, title: 'Download MP4 or MP3', description: 'Select Download Full HD (1080p) or Convert to MP3 to save to your device.' }
     ],
@@ -284,7 +284,7 @@ export const TOOLS: ToolDefinition[] = [
       },
       {
         question: 'How do I convert Instagram video to MP3 audio?',
-        answer: 'Click the "Convert to MP3 Audio" button on the video result card. Toolvero will decode the audio track and save it as an MP3 file.'
+        answer: 'Click the "Convert to MP3 Audio" button on the video result card. QuickVero will decode the audio track and save it as an MP3 file.'
       }
     ]
   },
@@ -301,8 +301,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'Facebook Video Downloader Online — Download FB Videos & Reels | Toolvero',
-    seoDescription: 'Download Facebook videos and Reels online for free in 1080p HD MP4 format. Extract MP3 audio without installing any software with Toolvero.',
+    seoTitle: 'Facebook Video Downloader Online — Download FB Videos & Reels | QuickVero',
+    seoDescription: 'Download Facebook videos and Reels online for free in 1080p HD MP4 format. Extract MP3 audio without installing any software with QuickVero.',
     keywords: ['facebook video downloader', 'fb video download', 'download facebook reels', 'fb to mp3', 'facebook clip saver'],
     features: [
       'Download Facebook Watch and Reels in 1080p HD or 720p SD',
@@ -313,7 +313,7 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy Facebook Video Link', description: 'Click Share -> Copy Link on the Facebook video or reel.' },
-      { step: 2, title: 'Paste in Search Box', description: 'Paste the copied URL into Toolvero.' },
+      { step: 2, title: 'Paste in Search Box', description: 'Paste the copied URL into QuickVero.' },
       { step: 3, title: 'Analyze Stream', description: 'Click Fetch & Download to retrieve the video streams.' },
       { step: 4, title: 'Download Video', description: 'Choose Full HD, SD, or MP3 Audio download.' }
     ],
@@ -341,8 +341,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'YouTube Video & Shorts Downloader Online | Toolvero',
-    seoDescription: 'Download YouTube videos and Shorts in MP4 online for free. Extract 320kbps MP3 audio cleanly with Toolvero.',
+    seoTitle: 'YouTube Video & Shorts Downloader Online | QuickVero',
+    seoDescription: 'Download YouTube videos and Shorts in MP4 online for free. Extract 320kbps MP3 audio cleanly with QuickVero.',
     keywords: ['youtube video downloader', 'youtube shorts downloader', 'youtube to mp4', 'youtube to mp3', 'download yt video'],
     features: [
       'Supports standard YouTube videos and vertical YouTube Shorts',
@@ -353,7 +353,7 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy YouTube URL', description: 'Copy the URL from browser address bar or tap Share -> Copy Link.' },
-      { step: 2, title: 'Paste URL', description: 'Paste the YouTube link into the Toolvero downloader bar.' },
+      { step: 2, title: 'Paste URL', description: 'Paste the YouTube link into the QuickVero downloader bar.' },
       { step: 3, title: 'Preview & Choose', description: 'Watch the video preview and select MP4 (1080p/720p) or MP3.' },
       { step: 4, title: 'Instant Download', description: 'Click your preferred button to trigger the instant download.' }
     ],
@@ -377,8 +377,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'TikTok Video Downloader No Watermark Online | Toolvero',
-    seoDescription: 'Download TikTok videos without watermark in HD MP4 online for free. Extract trending TikTok sounds and songs to MP3 with Toolvero.',
+    seoTitle: 'TikTok Video Downloader No Watermark Online | QuickVero',
+    seoDescription: 'Download TikTok videos without watermark in HD MP4 online for free. Extract trending TikTok sounds and songs to MP3 with QuickVero.',
     keywords: ['tiktok video downloader', 'tiktok no watermark', 'download tiktok video', 'tiktok sound download', 'tiktok to mp3'],
     features: [
       'Download TikTok videos with completely removed watermark',
@@ -388,7 +388,7 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy TikTok Link', description: 'In the TikTok app, tap Share and select Copy Link.' },
-      { step: 2, title: 'Paste in Toolvero', description: 'Paste the link into the TikTok downloader input.' },
+      { step: 2, title: 'Paste in QuickVero', description: 'Paste the link into the TikTok downloader input.' },
       { step: 3, title: 'Download Clean MP4', description: 'Click Download HD (No Watermark) to save the clean video.' }
     ],
     faqs: [
@@ -411,8 +411,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'Twitter Video Downloader Online — Download X.com Videos | Toolvero',
-    seoDescription: 'Download Twitter and X.com videos online in HD MP4. Fast, free, and secure Twitter video converter by Toolvero.',
+    seoTitle: 'Twitter Video Downloader Online — Download X.com Videos | QuickVero',
+    seoDescription: 'Download Twitter and X.com videos online in HD MP4. Fast, free, and secure Twitter video converter by QuickVero.',
     keywords: ['twitter video downloader', 'x video download', 'download tweet video', 'twitter to mp4', 'x to mp3'],
     features: [
       'Download high-definition video clips from X (formerly Twitter)',
@@ -422,7 +422,7 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy Tweet Link', description: 'Click the Share icon under the tweet and select Copy Link.' },
-      { step: 2, title: 'Paste into Toolvero', description: 'Paste the link into the Twitter downloader.' },
+      { step: 2, title: 'Paste into QuickVero', description: 'Paste the link into the Twitter downloader.' },
       { step: 3, title: 'Download MP4', description: 'Click Download HD MP4 to save the video.' }
     ],
     faqs: [
@@ -445,8 +445,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 500,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'All-in-One Video Downloader & Converter Online | Toolvero',
-    seoDescription: 'Download videos from any link: Instagram, Facebook, YouTube, TikTok, Twitter, or direct URLs in HD MP4 or convert to MP3 audio with Toolvero.',
+    seoTitle: 'All-in-One Video Downloader & Converter Online | QuickVero',
+    seoDescription: 'Download videos from any link: Instagram, Facebook, YouTube, TikTok, Twitter, or direct URLs in HD MP4 or convert to MP3 audio with QuickVero.',
     keywords: ['video downloader', 'download video from link', 'all video downloader', 'link to mp4', 'link to mp3', 'universal video converter'],
     features: [
       'Multi-platform auto-detection (Instagram, Facebook, YouTube, TikTok, Twitter, etc.)',
@@ -458,18 +458,18 @@ export const TOOLS: ToolDefinition[] = [
     ],
     howToSteps: [
       { step: 1, title: 'Copy Any Video Link', description: 'Copy the URL of any video from social media or the web.' },
-      { step: 2, title: 'Paste into Toolvero', description: 'Paste the URL into the Universal Video Downloader box.' },
+      { step: 2, title: 'Paste into QuickVero', description: 'Paste the URL into the Universal Video Downloader box.' },
       { step: 3, title: 'Preview the Video', description: 'Watch the video preview and check metadata.' },
       { step: 4, title: 'Download or Convert', description: 'Choose Download Full HD MP4 or Convert to MP3 Audio.' }
     ],
     faqs: [
       {
         question: 'What video sites are supported?',
-        answer: 'Toolvero supports Instagram (Reels & Posts), Facebook (Watch & Reels), YouTube (Videos & Shorts), TikTok (No Watermark), Twitter / X, Vimeo, Reddit, and direct .mp4 / .webm video URLs.'
+        answer: 'QuickVero supports Instagram (Reels & Posts), Facebook (Watch & Reels), YouTube (Videos & Shorts), TikTok (No Watermark), Twitter / X, Vimeo, Reddit, and direct .mp4 / .webm video URLs.'
       },
       {
         question: 'Can I extract MP3 audio from any video link?',
-        answer: 'Yes! Toolvero decodes the audio track natively in your browser using the Web Audio API and exports a clean high-bitrate MP3.'
+        answer: 'Yes! QuickVero decodes the audio track natively in your browser using the Web Audio API and exports a clean high-bitrate MP3.'
       }
     ]
   },
@@ -485,10 +485,10 @@ export const TOOLS: ToolDefinition[] = [
     supportedFormats: ['video/mp4', 'video/webm', 'video/quicktime'],
     maxFileSizeMB: 250,
     engine: 'cloud-ready',
-    engineNotice: 'Cloud Video Processing Engine Ready — Connects to Toolvero FastAPI Video Pipeline.',
+    engineNotice: 'Cloud Video Processing Engine Ready — Connects to QuickVero FastAPI Video Pipeline.',
     isPopular: true,
-    seoTitle: 'Video Compressor Online — Compress MP4 & MOV Videos | Toolvero',
-    seoDescription: 'Compress large video files online with Toolvero. Reduce MP4 and MOV video sizes for Discord, WhatsApp, and email attachments.',
+    seoTitle: 'Video Compressor Online — Compress MP4 & MOV Videos | QuickVero',
+    seoDescription: 'Compress large video files online with QuickVero. Reduce MP4 and MOV video sizes for Discord, WhatsApp, and email attachments.',
     keywords: ['video compressor', 'compress mp4', 'compress mov', 'reduce video size', 'video shrinker'],
     features: [
       'Target file size preset (Discord 8MB, WhatsApp 16MB, Email 25MB)',
@@ -526,8 +526,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Video to GIF Converter Online — High Quality Animated GIFs | Toolvero',
-    seoDescription: 'Convert MP4 and WebM videos to animated GIFs online. Adjust frame rate, speed, and size with Toolvero.',
+    seoTitle: 'Video to GIF Converter Online — High Quality Animated GIFs | QuickVero',
+    seoDescription: 'Convert MP4 and WebM videos to animated GIFs online. Adjust frame rate, speed, and size with QuickVero.',
     keywords: ['video to gif', 'mp4 to gif', 'gif maker', 'animated gif converter'],
     features: [
       'FPS settings (10, 15, 24 fps)',
@@ -559,8 +559,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 200,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Video Resizer Online — Scale Video Resolution | Toolvero',
-    seoDescription: 'Resize video resolution online for TikTok, Instagram Reels, and YouTube Shorts with Toolvero.',
+    seoTitle: 'Video Resizer Online — Scale Video Resolution | QuickVero',
+    seoDescription: 'Resize video resolution online for TikTok, Instagram Reels, and YouTube Shorts with QuickVero.',
     keywords: ['video resizer', 'scale video', 'resize mp4', '9:16 video converter'],
     features: ['Preset aspect ratios', 'Smart cropping or letterboxing', 'Clean resolution downscaling'],
     howToSteps: [
@@ -585,8 +585,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 300,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Video Converter Online — Convert MOV, WebM to MP4 | Toolvero',
-    seoDescription: 'Universal video converter. Convert MOV, MKV, and WebM to MP4 online with Toolvero.',
+    seoTitle: 'Video Converter Online — Convert MOV, WebM to MP4 | QuickVero',
+    seoDescription: 'Universal video converter. Convert MOV, MKV, and WebM to MP4 online with QuickVero.',
     keywords: ['video converter', 'mov to mp4', 'mkv to mp4', 'webm to mp4'],
     features: ['Universal device compatibility', 'Subtitles and audio track pass-through', 'Hardware-accelerated encoding'],
     howToSteps: [
@@ -611,8 +611,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 200,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'Audio Extractor Online — Extract Sound from Video | Toolvero',
-    seoDescription: 'Extract audio from MP4, MOV, and WebM videos into MP3 or WAV audio files online with Toolvero.',
+    seoTitle: 'Audio Extractor Online — Extract Sound from Video | QuickVero',
+    seoDescription: 'Extract audio from MP4, MOV, and WebM videos into MP3 or WAV audio files online with QuickVero.',
     keywords: ['audio extractor', 'extract audio from video', 'video sound ripper', 'mp4 audio rip'],
     features: ['Direct audio stream copy with zero quality loss', 'Export to MP3, WAV, or AAC', 'Fast extraction'],
     howToSteps: [
@@ -639,8 +639,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 150,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'MP4 to MP3 Converter Online — High Bitrate 320kbps | Toolvero',
-    seoDescription: 'Convert MP4 videos to MP3 audio online for free with Toolvero. Choose 128k, 192k, or 320k bitrates with crystal clear sound quality.',
+    seoTitle: 'MP4 to MP3 Converter Online — High Bitrate 320kbps | QuickVero',
+    seoDescription: 'Convert MP4 videos to MP3 audio online for free with QuickVero. Choose 128k, 192k, or 320k bitrates with crystal clear sound quality.',
     keywords: ['mp4 to mp3', 'convert mp4 to mp3', 'video to audio converter', 'mp3 extractor'],
     features: ['Bitrate selection (128kbps, 192kbps, 256kbps, 320kbps)', 'ID3 tag preservation', 'Fast audio transcode'],
     howToSteps: [
@@ -666,8 +666,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Audio Converter Online — Convert MP3, WAV, FLAC, AAC | Toolvero',
-    seoDescription: 'Convert between all major audio formats online for free with Toolvero. Fast, clean audio conversion.',
+    seoTitle: 'Audio Converter Online — Convert MP3, WAV, FLAC, AAC | QuickVero',
+    seoDescription: 'Convert between all major audio formats online for free with QuickVero. Fast, clean audio conversion.',
     keywords: ['audio converter', 'convert audio', 'flac to mp3', 'm4a to mp3', 'audio format converter'],
     features: ['Supports MP3, WAV, FLAC, AAC, OGG', 'Audio sample rate customization (44.1kHz / 48kHz)', 'Stereo and Mono channel modes'],
     howToSteps: [
@@ -692,8 +692,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Audio Compressor Online — Reduce MP3 & WAV Size | Toolvero',
-    seoDescription: 'Compress MP3, WAV, and audio files online. Shrink audio attachments for email and chat with Toolvero.',
+    seoTitle: 'Audio Compressor Online — Reduce MP3 & WAV Size | QuickVero',
+    seoDescription: 'Compress MP3, WAV, and audio files online. Shrink audio attachments for email and chat with QuickVero.',
     keywords: ['audio compressor', 'compress mp3', 'reduce audio file size', 'shrink voice recording'],
     features: ['Smart variable bitrate (VBR) compression', 'High-pass voice filter option', 'Size reduction estimator'],
     howToSteps: [
@@ -702,7 +702,7 @@ export const TOOLS: ToolDefinition[] = [
       { step: 3, title: 'Download compressed audio', description: 'Save your compact audio file.' }
     ],
     faqs: [
-      { question: 'Can I compress voice notes without making voices sound metallic?', answer: 'Yes, Toolvero uses modern psychoacoustic models that prioritize human vocal frequencies.' }
+      { question: 'Can I compress voice notes without making voices sound metallic?', answer: 'Yes, QuickVero uses modern psychoacoustic models that prioritize human vocal frequencies.' }
     ]
   },
   {
@@ -718,8 +718,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 150,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'WAV to MP3 Converter Online — Free & Fast | Toolvero',
-    seoDescription: 'Convert WAV to MP3 online. Shrink uncompressed audio files by 90% while keeping high fidelity sound with Toolvero.',
+    seoTitle: 'WAV to MP3 Converter Online — Free & Fast | QuickVero',
+    seoDescription: 'Convert WAV to MP3 online. Shrink uncompressed audio files by 90% while keeping high fidelity sound with QuickVero.',
     keywords: ['wav to mp3', 'convert wav to mp3', 'compress wav file'],
     features: ['Up to 90% size reduction', 'Full frequency response', 'Batch conversion ready'],
     howToSteps: [
@@ -744,8 +744,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'MP3 to WAV Converter Online — Uncompressed Audio | Toolvero',
-    seoDescription: 'Convert MP3 to WAV format online with Toolvero. Prepare audio tracks for DAWs, CD burning, and editing software.',
+    seoTitle: 'MP3 to WAV Converter Online — Uncompressed Audio | QuickVero',
+    seoDescription: 'Convert MP3 to WAV format online with QuickVero. Prepare audio tracks for DAWs, CD burning, and editing software.',
     keywords: ['mp3 to wav', 'convert mp3 to wav', 'decompress audio'],
     features: ['16-bit and 24-bit PCM options', '44.1 kHz and 48 kHz standard sample rates', 'DAW compatible'],
     howToSteps: [
@@ -772,8 +772,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: true,
-    seoTitle: 'PDF Compressor Online — Reduce PDF File Size | Toolvero',
-    seoDescription: 'Compress PDF files online for free with Toolvero. Reduce PDF file size for email attachments and online forms without losing readability.',
+    seoTitle: 'PDF Compressor Online — Reduce PDF File Size | QuickVero',
+    seoDescription: 'Compress PDF files online for free with QuickVero. Reduce PDF file size for email attachments and online forms without losing readability.',
     keywords: ['pdf compressor', 'compress pdf', 'reduce pdf size', 'shrink pdf', 'pdf optimizer'],
     features: [
       'Preset compression levels (Extreme, Recommended, High Quality)',
@@ -805,8 +805,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 30,
     engine: 'browser',
     isPopular: true,
-    seoTitle: 'JPG to PDF Converter Online — Fast & In-Browser | Toolvero',
-    seoDescription: 'Convert JPG images to PDF document online with Toolvero. 100% private in-browser conversion with zero server uploads.',
+    seoTitle: 'JPG to PDF Converter Online — Fast & In-Browser | QuickVero',
+    seoDescription: 'Convert JPG images to PDF document online with QuickVero. 100% private in-browser conversion with zero server uploads.',
     keywords: ['jpg to pdf', 'convert jpg to pdf', 'images to pdf', 'photo to pdf', 'picture to pdf'],
     features: [
       'Generates standard ISO-compliant PDF',
@@ -837,8 +837,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 80,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'PDF to JPG Converter Online — Extract PDF Pages | Toolvero',
-    seoDescription: 'Convert PDF pages into high-resolution JPG images online with Toolvero. Clean, fast, and high DPI extraction.',
+    seoTitle: 'PDF to JPG Converter Online — Extract PDF Pages | QuickVero',
+    seoDescription: 'Convert PDF pages into high-resolution JPG images online with QuickVero. Clean, fast, and high DPI extraction.',
     keywords: ['pdf to jpg', 'convert pdf to image', 'extract pdf pages', 'pdf to picture'],
     features: ['High DPI rasterization (150 DPI / 300 DPI)', 'Export individual pages or ZIP bundle', 'Sharp font rendering'],
     howToSteps: [
@@ -863,8 +863,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Merge PDF Online — Combine Multiple PDFs into One | Toolvero',
-    seoDescription: 'Combine multiple PDF files into one document online for free with Toolvero. Easy drag-and-drop reordering.',
+    seoTitle: 'Merge PDF Online — Combine Multiple PDFs into One | QuickVero',
+    seoDescription: 'Combine multiple PDF files into one document online for free with QuickVero. Easy drag-and-drop reordering.',
     keywords: ['merge pdf', 'combine pdf', 'join pdf files', 'pdf merger'],
     features: ['Drag-and-drop file reordering', 'Preserves bookmarks and internal links', 'Fast document stitching'],
     howToSteps: [
@@ -889,8 +889,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'Split PDF Online — Extract Pages from PDF | Toolvero',
-    seoDescription: 'Split PDF files and extract individual pages or custom page ranges online with Toolvero.',
+    seoTitle: 'Split PDF Online — Extract Pages from PDF | QuickVero',
+    seoDescription: 'Split PDF files and extract individual pages or custom page ranges online with QuickVero.',
     keywords: ['split pdf', 'extract pdf pages', 'separate pdf', 'cut pdf'],
     features: ['Custom page range extraction (e.g., 1-5, 8, 11-14)', 'Split every single page into separate files', 'Visual thumbnail page selector'],
     howToSteps: [
@@ -917,8 +917,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 200,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'Hash Generator Online — SHA-256, SHA-512, SHA-1 Checksums | Toolvero',
-    seoDescription: 'Generate cryptographic hashes for files and text online with Toolvero. 100% in-browser calculation using the Web Crypto API.',
+    seoTitle: 'Hash Generator Online — SHA-256, SHA-512, SHA-1 Checksums | QuickVero',
+    seoDescription: 'Generate cryptographic hashes for files and text online with QuickVero. 100% in-browser calculation using the Web Crypto API.',
     keywords: ['hash generator', 'sha256 generator', 'sha512', 'md5 file checksum', 'file hash checker'],
     features: [
       'Supports SHA-256, SHA-512, SHA-384, and SHA-1',
@@ -949,8 +949,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 20,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'Base64 Encoder & Decoder Online — Files & Text | Toolvero',
-    seoDescription: 'Encode and decode Base64 strings and files online with Toolvero. Generates HTML/CSS data URIs in your browser.',
+    seoTitle: 'Base64 Encoder & Decoder Online — Files & Text | QuickVero',
+    seoDescription: 'Encode and decode Base64 strings and files online with QuickVero. Generates HTML/CSS data URIs in your browser.',
     keywords: ['base64 encoder', 'base64 decoder', 'image to base64', 'data uri generator', 'base64 convert'],
     features: [
       'Bidirectional encoding and decoding',
@@ -980,8 +980,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 1000,
     engine: 'browser',
     isPopular: false,
-    seoTitle: 'File Size Calculator Online — Data Units & Transfer Speed | Toolvero',
-    seoDescription: 'Convert between Bytes, KB, MB, GB, TB and calculate download times across internet connection speeds with Toolvero.',
+    seoTitle: 'File Size Calculator Online — Data Units & Transfer Speed | QuickVero',
+    seoDescription: 'Convert between Bytes, KB, MB, GB, TB and calculate download times across internet connection speeds with QuickVero.',
     keywords: ['file size calculator', 'data unit converter', 'download time calculator', 'mb to gb', 'bandwidth speed test'],
     features: [
       'Converts between Bytes, Kilobytes, Megabytes, Gigabytes, and Terabytes',
@@ -1010,8 +1010,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'ZIP Creator Online — Compress Files into ZIP Archive | Toolvero',
-    seoDescription: 'Package multiple files into a compressed ZIP file online with Toolvero. Free, simple, and clean.',
+    seoTitle: 'ZIP Creator Online — Compress Files into ZIP Archive | QuickVero',
+    seoDescription: 'Package multiple files into a compressed ZIP file online with QuickVero. Free, simple, and clean.',
     keywords: ['zip creator', 'make zip online', 'create zip archive', 'compress files to zip'],
     features: ['Multi-file selection', 'Zero software installation', 'Standard Deflate compression'],
     howToSteps: [
@@ -1036,8 +1036,8 @@ export const TOOLS: ToolDefinition[] = [
     maxFileSizeMB: 100,
     engine: 'cloud-ready',
     isPopular: false,
-    seoTitle: 'File Converter Online — Universal Document & File Conversion | Toolvero',
-    seoDescription: 'Convert files between document and media formats online with Toolvero.',
+    seoTitle: 'File Converter Online — Universal Document & File Conversion | QuickVero',
+    seoDescription: 'Convert files between document and media formats online with QuickVero.',
     keywords: ['file converter', 'universal converter', 'document converter', 'convert formats'],
     features: ['Multi-format auto-detection', 'Secure file handling', 'Cloud processing engine ready'],
     howToSteps: [
@@ -1046,7 +1046,7 @@ export const TOOLS: ToolDefinition[] = [
       { step: 3, title: 'Download converted file', description: 'Save your file.' }
     ],
     faqs: [
-      { question: 'Is my data secure?', answer: 'Yes! Toolvero adheres to a strict privacy-first policy where files are never retained or indexed.' }
+      { question: 'Is my data secure?', answer: 'Yes! QuickVero adheres to a strict privacy-first policy where files are never retained or indexed.' }
     ]
   }
 ];

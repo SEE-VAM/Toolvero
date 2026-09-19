@@ -31,13 +31,13 @@ export const ToolsCatalogPage: React.FC<ToolsCatalogPageProps> = ({
     }
 
     updatePageMeta({
-      title: 'All Online Tools Catalog — Free File Utilities | Toolvero',
-      description: 'Explore the full directory of online tools at Toolvero. Compress images, convert audio/video, edit PDFs, and generate checksums directly in your browser.',
-      canonicalUrl: 'https://toolvero.com/tools',
+      title: 'All Online Tools Catalog — Free File Utilities | QuickVero',
+      description: 'Explore the full directory of online tools at QuickVero. Compress images, convert audio/video, edit PDFs, and generate checksums directly in your browser.',
+      canonicalUrl: 'https://quickvero.com/tools',
       keywords: ['all tools', 'online utilities', 'image tools', 'pdf tools', 'video converters'],
     });
 
-    analytics.trackPageView('/tools', 'Toolvero - All Tools Catalog');
+    analytics.trackPageView('/tools', 'QuickVero - All Tools Catalog');
   }, []);
 
   const filteredTools = useMemo(() => {

@@ -1,6 +1,6 @@
 import { AnalyticsEvent, AnalyticsService } from '../types/analytics';
 
-class ToolveroAnalytics implements AnalyticsService {
+class QuickVeroAnalytics implements AnalyticsService {
   private isInitialized = false;
   private measurementId: string | null = null;
 
@@ -55,4 +55,4 @@ class ToolveroAnalytics implements AnalyticsService {
   }
 }
 
-export const analytics = new ToolveroAnalytics();
+export const analytics = new QuickVeroAnalytics();

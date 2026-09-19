@@ -23,32 +23,32 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   useEffect(() => {
     updatePageMeta({
-      title: 'Toolvero — Powerful Online Tools. Simple & Fast.',
-      description: 'Compress, convert, resize and optimize your files directly in your browser with Toolvero. Free image, video, audio, PDF, and file utilities.',
-      canonicalUrl: 'https://toolvero.com/',
+      title: 'QuickVero — Powerful Online Tools. Simple & Fast.',
+      description: 'Compress, convert, resize and optimize your files directly in your browser with QuickVero. Free image, video, audio, PDF, and file utilities.',
+      canonicalUrl: 'https://quickvero.com/',
       keywords: [
         'online tools',
         'image compressor',
         'pdf converter',
         'mp4 to mp3',
         'free file tools',
-        'toolvero',
+        'quickvero',
       ],
       structuredData: {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        'name': 'Toolvero',
-        'url': 'https://toolvero.com/',
+        'name': 'QuickVero',
+        'url': 'https://quickvero.com/',
         'description': 'Powerful Online Tools. Simple & Fast.',
         'potentialAction': {
           '@type': 'SearchAction',
-          'target': 'https://toolvero.com/tools?q={search_term_string}',
+          'target': 'https://quickvero.com/tools?q={search_term_string}',
           'query-input': 'required name=search_term_string'
         }
       }
     });
 
-    analytics.trackPageView('/', 'Toolvero - Homepage');
+    analytics.trackPageView('/', 'QuickVero - Homepage');
   }, []);
 
   const handleSelectTool = (tool: ToolDefinition) => {
@@ -91,7 +91,7 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* Category Section */}
       <CategorySection onSelectCategory={handleSelectCategory} />
 
-      {/* Why Toolvero Trust Section */}
+      {/* Why QuickVero Trust Section */}
       <TrustSection />
     </div>
   );

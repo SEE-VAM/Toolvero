@@ -10,8 +10,8 @@ interface NotFoundPageProps {
 export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onNavigate, onOpenSearch }) => {
   useEffect(() => {
     updatePageMeta({
-      title: '404 - Page Not Found | Toolvero',
-      description: 'The requested utility or page could not be located on Toolvero.',
+      title: '404 - Page Not Found | QuickVero',
+      description: 'The requested utility or page could not be located on QuickVero.',
     });
   }, []);
 

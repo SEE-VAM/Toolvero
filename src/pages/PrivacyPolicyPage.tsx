@@ -5,9 +5,9 @@ import { updatePageMeta } from '../utils/seoHelpers';
 export const PrivacyPolicyPage: React.FC = () => {
   useEffect(() => {
     updatePageMeta({
-      title: 'Privacy Policy — Toolvero File Security & Data Protection',
-      description: 'Review the Toolvero privacy policy. We process files directly in your browser with zero permanent storage.',
-      canonicalUrl: 'https://toolvero.com/privacy-policy',
+      title: 'Privacy Policy — QuickVero File Security & Data Protection',
+      description: 'Review the QuickVero privacy policy. We process files directly in your browser with zero permanent storage.',
+      canonicalUrl: 'https://quickvero.com/privacy-policy',
     });
   }, []);
 
@@ -29,7 +29,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <div className="space-y-1">
             <h2 className="text-base font-bold">Browser-First Zero-Retention Commitment</h2>
             <p className="text-sm text-emerald-800 dark:text-emerald-200 leading-relaxed">
-              Whenever supported, Toolvero processes your files directly within your web browser using client-side technologies. Your files do not get uploaded, saved, or indexed on any remote server.
+              Whenever supported, QuickVero processes your files directly within your web browser using client-side technologies. Your files do not get uploaded, saved, or indexed on any remote server.
             </p>
           </div>
         </div>
@@ -38,7 +38,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">1. Information We Do Not Collect</h2>
             <p>
-              Toolvero does not require account creation, email sign-ups, or personal identity verification. For all in-browser tools (including Image Compressor, Image Resizer, JPG/PNG Converters, WebP Converter, Hash Generator, Base64 Encoder, and PDF Tools), the computational workload occurs strictly in your device&apos;s local volatile memory.
+              QuickVero does not require account creation, email sign-ups, or personal identity verification. For all in-browser tools (including Image Compressor, Image Resizer, JPG/PNG Converters, WebP Converter, Hash Generator, Base64 Encoder, and PDF Tools), the computational workload occurs strictly in your device&apos;s local volatile memory.
             </p>
           </section>
 
@@ -52,7 +52,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">3. Local Storage (Cookies &amp; Preferences)</h2>
             <p>
-              Toolvero uses modern browser <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">localStorage</code> strictly to remember your preferred UI theme (Dark or Light), your pinned Favorite Tools, and your Recently Visited tools. This data never leaves your browser.
+              QuickVero uses modern browser <code className="text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">localStorage</code> strictly to remember your preferred UI theme (Dark or Light), your pinned Favorite Tools, and your Recently Visited tools. This data never leaves your browser.
             </p>
           </section>
 

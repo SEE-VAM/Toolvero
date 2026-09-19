@@ -4,9 +4,9 @@ import { updatePageMeta } from '../utils/seoHelpers';
 export const TermsPage: React.FC = () => {
   useEffect(() => {
     updatePageMeta({
-      title: 'Terms of Service — Toolvero Online Utilities',
-      description: 'Terms and conditions governing the use of Toolvero online conversion and utility services.',
-      canonicalUrl: 'https://toolvero.com/terms',
+      title: 'Terms of Service — QuickVero Online Utilities',
+      description: 'Terms and conditions governing the use of QuickVero online conversion and utility services.',
+      canonicalUrl: 'https://quickvero.com/terms',
     });
   }, []);
 
@@ -26,28 +26,28 @@ export const TermsPage: React.FC = () => {
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using Toolvero (&ldquo;the Website&rdquo;), you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service.
+              By accessing and using QuickVero (&ldquo;the Website&rdquo;), you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">2. Acceptable Use</h2>
             <p>
-              You agree to use Toolvero only for legitimate file conversion, editing, and utility purposes. You agree not to use the platform to transmit malicious code, copyright-infringing materials, or unlawful content.
+              You agree to use QuickVero only for legitimate file conversion, editing, and utility purposes. You agree not to use the platform to transmit malicious code, copyright-infringing materials, or unlawful content.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">3. Intellectual Property Rights</h2>
             <p>
-              You retain 100% full and unconditional ownership of all files and media you process using Toolvero. Toolvero claims zero ownership, license, or distribution rights over your content.
+              You retain 100% full and unconditional ownership of all files and media you process using QuickVero. QuickVero claims zero ownership, license, or distribution rights over your content.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">4. Availability &amp; Modifications</h2>
             <p>
-              Toolvero reserves the right to enhance, modify, or update tool features without prior notice. The service is provided &ldquo;as is&rdquo; without warranties of any kind.
+              QuickVero reserves the right to enhance, modify, or update tool features without prior notice. The service is provided &ldquo;as is&rdquo; without warranties of any kind.
             </p>
           </section>
         </div>

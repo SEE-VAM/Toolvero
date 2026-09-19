@@ -4,7 +4,7 @@ import { Theme } from '../types/theme';
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'system';
-    const saved = localStorage.getItem('toolvero_theme') as Theme;
+    const saved = localStorage.getItem('quickvero_theme') as Theme;
     return saved || 'system';
   });
 
@@ -44,7 +44,7 @@ export function useTheme() {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('toolvero_theme', newTheme);
+    localStorage.setItem('quickvero_theme', newTheme);
   };
 
   const toggleTheme = () => {

@@ -11,9 +11,9 @@ export const ContactPage: React.FC = () => {
 
   useEffect(() => {
     updatePageMeta({
-      title: 'Contact Toolvero — Support & Feedback',
-      description: 'Have a suggestion for a new tool or need help? Contact the Toolvero engineering and support team.',
-      canonicalUrl: 'https://toolvero.com/contact',
+      title: 'Contact QuickVero — Support & Feedback',
+      description: 'Have a suggestion for a new tool or need help? Contact the QuickVero engineering and support team.',
+      canonicalUrl: 'https://quickvero.com/contact',
     });
   }, []);
 
@@ -45,7 +45,7 @@ export const ContactPage: React.FC = () => {
                 Message Sent!
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-                Thank you for contacting Toolvero. Our team will review your message and reply promptly.
+                Thank you for contacting QuickVero. Our team will review your message and reply promptly.
               </p>
               <button
                 onClick={() => {

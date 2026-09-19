@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ToolDefinition } from '../types/tool';
 import { TOOLS } from '../data/tools';
 
-const STORAGE_KEY = 'toolvero_recent_tools';
+const STORAGE_KEY = 'quickvero_recent_tools';
 const MAX_RECENTS = 6;
 
 export function useRecentTools() {

@@ -59,7 +59,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
     updatePageMeta({
       title: tool.seoTitle,
       description: tool.seoDescription,
-      canonicalUrl: `https://toolvero.com${tool.route}`,
+      canonicalUrl: `https://quickvero.com${tool.route}`,
       keywords: tool.keywords,
       structuredData: schema,
     });

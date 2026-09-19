@@ -1,4 +1,4 @@
-# Toolvero — Powerful Online Tools. Simple & Fast.
+# QuickVero — Powerful Online Tools. Simple & Fast.
 
 > A modern, production-quality online utility platform for instant image, video, audio, PDF, and file operations. Built with React 18, TypeScript, Vite, and Tailwind CSS.
 
@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-Toolvero is a high-performance, privacy-focused online utility suite designed for students, developers, content creators, and office users. By prioritizing client-side browser execution (via the HTML5 Canvas API and Web Crypto API), Toolvero ensures maximum privacy, near-instant speed, and zero server storage costs.
+QuickVero is a high-performance, privacy-focused online utility suite designed for students, developers, content creators, and office users. By prioritizing client-side browser execution (via the HTML5 Canvas API and Web Crypto API), QuickVero ensures maximum privacy, near-instant speed, and zero server storage costs.
 
 ---
 
@@ -83,12 +83,12 @@ npm run preview
 
 ## 🌐 Deploying to GitHub Pages
 
-To host Toolvero for free on GitHub Pages:
+To host QuickVero for free on GitHub Pages:
 
 1. In `vite.config.ts`, set the base path if using a subfolder repository:
    ```ts
    export default defineConfig({
-     base: '/Toolvero/', // or '/' if deploying to a custom root domain
+     base: '/QuickVero/', // or '/' if deploying to a custom root domain
      plugins: [react()],
    });
    ```
@@ -122,15 +122,15 @@ Available variables:
 
 | Variable | Description | Example |
 | :--- | :--- | :--- |
-| `VITE_SITE_URL` | Canonical root URL of your deployment | `https://toolvero.com` |
+| `VITE_SITE_URL` | Canonical root URL of your deployment | `https://quickvero.com` |
 | `VITE_GA_MEASUREMENT_ID` | Optional Google Analytics 4 Measurement ID | `G-ABC123XYZ` |
-| `VITE_BACKEND_API_URL` | Endpoint for the Python / FastAPI video & transcode backend | `https://api.toolvero.com` |
+| `VITE_BACKEND_API_URL` | Endpoint for the Python / FastAPI video & transcode backend | `https://api.quickvero.com` |
 
 ---
 
 ## 🔌 Connecting the Future FastAPI / Python Backend
 
-Toolvero is architected with a unified service layer (`src/services/toolService.ts`). 
+QuickVero is architected with a unified service layer (`src/services/toolService.ts`). 
 
 ### Standard Backend Request Contract
 
@@ -153,11 +153,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import json
 
-app = FastAPI(title="Toolvero Cloud Processing Engine")
+app = FastAPI(title="QuickVero Cloud Processing Engine")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://toolvero.com", "http://localhost:3000"],
+    allow_origins=["https://quickvero.com", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -203,8 +203,8 @@ Thanks to the centralized tool registry, adding a new utility takes under 5 minu
      maxFileSizeMB: 10,
      engine: 'browser',
      isPopular: false,
-     seoTitle: 'SVG Optimizer Online — Clean & Minify Vectors | Toolvero',
-     seoDescription: 'Minify SVG vectors online with Toolvero. 100% in-browser.',
+     seoTitle: 'SVG Optimizer Online — Clean & Minify Vectors | QuickVero',
+     seoDescription: 'Minify SVG vectors online with QuickVero. 100% in-browser.',
      keywords: ['svg optimizer', 'clean svg', 'minify vector'],
      features: ['Removes XML namespaces', 'Strips editor metadata'],
      howToSteps: [
@@ -224,4 +224,4 @@ Thanks to the centralized tool registry, adding a new utility takes under 5 minu
 
 ## 🛡️ License
 
-© 2026 Toolvero. All rights reserved.
+© 2026 QuickVero. All rights reserved.

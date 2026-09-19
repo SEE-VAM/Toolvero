@@ -28,13 +28,13 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
   useEffect(() => {
     if (category) {
       updatePageMeta({
-        title: `${category.name} Online — Free, Fast & Private | Toolvero`,
+        title: `${category.name} Online — Free, Fast & Private | QuickVero`,
         description: `${category.description} Free online tools for students, creators, and professionals.`,
-        canonicalUrl: `https://toolvero.com${category.route}`,
+        canonicalUrl: `https://quickvero.com${category.route}`,
         keywords: [category.name.toLowerCase(), `${category.id} tools`, 'online utilities'],
       });
 
-      analytics.trackPageView(category.route, `Toolvero - ${category.name}`);
+      analytics.trackPageView(category.route, `QuickVero - ${category.name}`);
     }
   }, [category]);
 

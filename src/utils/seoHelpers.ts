@@ -14,7 +14,7 @@ export function updatePageMeta({
   description,
   canonicalUrl = window.location.href,
   keywords = [],
-  ogImage = 'https://toolvero.com/og-image.png',
+  ogImage = 'https://quickvero.com/og-image.png',
   structuredData,
 }: SeoProps) {
   // Update document title
@@ -86,7 +86,7 @@ export function generateToolStructuredData(tool: ToolDefinition) {
         'priceCurrency': 'USD'
       },
       'description': tool.description,
-      'url': `https://toolvero.com${tool.route}`,
+      'url': `https://quickvero.com${tool.route}`,
     }
   ];
 

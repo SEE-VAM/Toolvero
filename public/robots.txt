@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://toolvero.com/sitemap.xml
+Sitemap: https://quickvero.com/sitemap.xml

@@ -41,11 +41,11 @@ export const TrustSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 md:py-24" aria-labelledby="why-toolvero-heading">
+    <section className="py-16 md:py-24" aria-labelledby="why-quickvero-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 id="why-toolvero-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Why Toolvero?
+          <h2 id="why-quickvero-heading" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Why QuickVero?
           </h2>
           <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
             Engineered from the ground up for privacy, speed, and clean modern convenience.

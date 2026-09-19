@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={() => handleLinkClick('/')}
           className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-lg py-1 px-1.5 -ml-1.5"
-          aria-label="Toolvero Homepage"
+          aria-label="QuickVero Homepage"
         >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform duration-150">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="flex flex-col text-left">
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-              Toolvero
+              QuickVero
               <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                 PRO
               </span>
