@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { MainLayout } from './layouts/MainLayout';
 import { HomePage } from './pages/HomePage';
 import { ToolsCatalogPage } from './pages/ToolsCatalogPage';
@@ -219,14 +220,17 @@ export function App() {
   };
 
   return (
-    <MainLayout
-      currentPath={currentPath}
-      onNavigate={navigate}
-      toasts={toasts}
-      onDismissToast={dismissToast}
-    >
-      {renderRoute()}
-    </MainLayout>
+    <>
+      <MainLayout
+        currentPath={currentPath}
+        onNavigate={navigate}
+        toasts={toasts}
+        onDismissToast={dismissToast}
+      >
+        {renderRoute()}
+      </MainLayout>
+      <Analytics />
+    </>
   );
 }
 
