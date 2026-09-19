@@ -406,133 +406,104 @@ export const VideoDownloaderWorkspace: React.FC<VideoDownloaderWorkspaceProps> =
 
               {/* Action Buttons Grid */}
               <div className="pt-2 space-y-3">
-                {videoInfo.downloadLinks && videoInfo.downloadLinks.length > 0 ? (
-                  <>
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Download Options (Direct Streams):
-                    </div>
+                {/* Primary Direct Download Buttons (100% On-Site) */}
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                  <span>Direct Download on QuickVero:</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-semibold">
+                    100% On-Site • No Redirects
+                  </span>
+                </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* 1080p Video Download */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadVideo(videoInfo.videoUrl, '1080p_FullHD')}
+                    disabled={!!downloadingFormat}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Download className="w-4 h-4" />
+                      <div className="text-left">
+                        <div className="leading-tight">Download Full HD (1080p)</div>
+                        <div className="text-[11px] text-emerald-100 font-normal">Direct MP4 • High Quality</div>
+                      </div>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded bg-emerald-700/80 text-emerald-100">
+                      MP4
+                    </span>
+                  </button>
+
+                  {/* 720p Video Download */}
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadVideo(videoInfo.videoUrl, '720p_HD')}
+                    disabled={!!downloadingFormat}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Download className="w-4 h-4" />
+                      <div className="text-left">
+                        <div className="leading-tight">Download HD (720p)</div>
+                        <div className="text-[11px] text-blue-100 font-normal">Direct MP4 • Optimized Size</div>
+                      </div>
+                    </div>
+                    <span className="text-xs px-2 py-0.5 rounded bg-blue-700/80 text-blue-100">
+                      MP4
+                    </span>
+                  </button>
+
+                  {/* Convert to MP3 Audio */}
+                  <button
+                    type="button"
+                    onClick={handleConvertToMp3}
+                    disabled={!!downloadingFormat}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-md shadow-purple-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer sm:col-span-2"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Music className="w-5 h-5 text-purple-200" />
+                      <div className="text-left">
+                        <div className="leading-tight flex items-center gap-1.5">
+                          <span>Convert &amp; Download MP3 Audio</span>
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-purple-400/30 text-purple-100">
+                            Real 320kbps MP3
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-purple-200 font-normal">
+                          Extract and save the audio track directly to your device
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-purple-700/80 text-white">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Download MP3</span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Optional external backup mirrors (only shown as secondary) */}
+                {videoInfo.downloadLinks && videoInfo.downloadLinks.length > 0 && (
+                  <details className="mt-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-xs">
+                    <summary className="font-semibold text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-800 dark:hover:text-slate-200 select-none">
+                      ⚡ Need an alternative external server mirror? (Optional)
+                    </summary>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700">
                       {videoInfo.downloadLinks.map((link, idx) => (
                         <a
                           key={idx}
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => {
-                            if (videoInfo?.url) {
-                              try {
-                                navigator.clipboard.writeText(videoInfo.url);
-                                onShowToast({
-                                  type: 'success',
-                                  message: 'Reel link copied! Opening downloader...',
-                                });
-                              } catch {
-                                // ignore
-                              }
-                            }
-                          }}
-                          className={`flex items-center justify-between p-3.5 rounded-2xl font-semibold text-sm shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${
-                            link.type === 'mp3'
-                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
-                          }`}
+                          className="flex items-center justify-between p-2 rounded-xl bg-slate-200/60 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium"
                         >
-                          <div className="flex items-center gap-2.5">
-                            {link.type === 'mp3' ? (
-                              <Music className="w-5 h-5 text-purple-200 shrink-0" />
-                            ) : (
-                              <Download className="w-5 h-5 text-emerald-200 shrink-0" />
-                            )}
-                            <div className="text-left">
-                              <div className="leading-tight">{link.label}</div>
-                              <div className="text-[11px] opacity-80 font-normal">
-                                {link.quality} • Instant Download
-                              </div>
-                            </div>
-                          </div>
-                          {link.badge && (
-                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-lg bg-white/20 text-white shrink-0 ml-2">
-                              {link.badge}
-                            </span>
-                          )}
+                          <span className="truncate">{link.label}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-300/80 dark:bg-slate-900 text-slate-600 dark:text-slate-400 shrink-0 ml-2">
+                            {link.quality}
+                          </span>
                         </a>
                       ))}
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      Download Formats:
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* 1080p Video Download */}
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadVideo(videoInfo.videoUrl, '1080p_FullHD')}
-                        disabled={!!downloadingFormat}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Download className="w-4 h-4" />
-                          <div className="text-left">
-                            <div className="leading-tight">Download Full HD (1080p)</div>
-                            <div className="text-[11px] text-emerald-100 font-normal">MP4 Format • High Quality</div>
-                          </div>
-                        </div>
-                        <span className="text-xs px-2 py-0.5 rounded bg-emerald-700/80 text-emerald-100">
-                          MP4
-                        </span>
-                      </button>
-
-                      {/* 720p Video Download */}
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadVideo(videoInfo.videoUrl, '720p_HD')}
-                        disabled={!!downloadingFormat}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Download className="w-4 h-4" />
-                          <div className="text-left">
-                            <div className="leading-tight">Download HD (720p)</div>
-                            <div className="text-[11px] text-blue-100 font-normal">MP4 Format • Optimized Size</div>
-                          </div>
-                        </div>
-                        <span className="text-xs px-2 py-0.5 rounded bg-blue-700/80 text-blue-100">
-                          MP4
-                        </span>
-                      </button>
-
-                      {/* Convert to MP3 Audio */}
-                      <button
-                        type="button"
-                        onClick={handleConvertToMp3}
-                        disabled={!!downloadingFormat}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-md shadow-purple-600/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer sm:col-span-2"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Music className="w-5 h-5 text-purple-200" />
-                          <div className="text-left">
-                            <div className="leading-tight flex items-center gap-1.5">
-                              <span>Convert to MP3 Audio</span>
-                              <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-purple-400/30 text-purple-100">
-                                Real MP3 320kbps
-                              </span>
-                            </div>
-                            <div className="text-[11px] text-purple-200 font-normal">
-                              Extract and decode the audio track natively in your browser
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-purple-700/80 text-white">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                          <span>Convert MP3</span>
-                        </div>
-                      </button>
-                    </div>
-                  </>
+                  </details>
                 )}
 
                 {/* Secondary utility options */}
