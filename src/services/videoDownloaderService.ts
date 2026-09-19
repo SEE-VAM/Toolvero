@@ -205,12 +205,12 @@ export class VideoDownloaderService {
 
     // 3. Instagram Reels & Posts Resolution
     if (platform === 'instagram') {
-      let igTitle = 'Instagram Reel / Video';
-      const reelMatch = cleanUrl.match(/(?:reel|p|tv)\/([a-zA-Z0-9_-]+)/);
+      const userMatch = cleanUrl.match(/instagram\.com\/([a-zA-Z0-9_.]+)\/(?:reel|p|reels)\//);
+      const reelMatch = cleanUrl.match(/(?:reel|p|tv|reels)\/([a-zA-Z0-9_-]+)/);
       const reelCode = reelMatch ? reelMatch[1] : '';
-      if (reelCode) {
-        igTitle = `Instagram Reel (${reelCode})`;
-      }
+      const author = userMatch ? `@${userMatch[1]}` : 'Instagram Creator';
+      const igTitle = reelCode ? `Instagram Reel (${reelCode})` : 'Instagram Reel';
+      const embedUrl = reelCode ? `https://www.instagram.com/reel/${reelCode}/embed/` : undefined;
 
       return {
         id: reelCode || Math.random().toString(36).substring(7),
@@ -218,16 +218,18 @@ export class VideoDownloaderService {
         platform: 'instagram',
         platformName: 'Instagram',
         title: igTitle,
-        author: '@instagram_creator',
+        author: author,
         duration: 'Reel',
-        thumbnail: SAMPLE_LINKS.instagram.thumbnail,
+        thumbnail: reelCode ? `https://www.instagram.com/p/${reelCode}/media/?size=l` : SAMPLE_LINKS.instagram.thumbnail,
         videoUrl: '/samples/sample_reel.mp4',
+        embedUrl,
         streams: [
-          { quality: 'HD', label: 'Instagram HD MP4', format: 'mp4', resolution: '1080x1920', size: 'HD', url: `https://snapinsta.app/?url=${encodeURIComponent(cleanUrl)}` },
+          { quality: 'HD', label: 'Instagram HD MP4', format: 'mp4', resolution: '1080x1920', size: 'HD', url: `https://fastdl.app/en?url=${encodeURIComponent(cleanUrl)}` },
         ],
         downloadLinks: [
-          { label: 'Download Instagram Reel (HD MP4 - SnapInsta)', type: 'mp4', quality: 'Full HD', url: `https://snapinsta.app/?url=${encodeURIComponent(cleanUrl)}`, badge: 'Recommended' },
-          { label: 'Download Audio & Video (FastDL)', type: 'mp3', quality: '320 kbps', url: `https://fastdl.app/en?url=${encodeURIComponent(cleanUrl)}`, badge: 'Fast' },
+          { label: 'Download Instagram Reel (Server 1: FastDL)', type: 'mp4', quality: '1080p HD', url: `https://fastdl.app/en?url=${encodeURIComponent(cleanUrl)}`, badge: 'Recommended' },
+          { label: 'Download Instagram Video (Server 2: SnapInsta)', type: 'mp4', quality: 'Full HD', url: `https://snapinsta.app/?url=${encodeURIComponent(cleanUrl)}`, badge: 'Fast' },
+          { label: 'Download Audio & Video (Server 3: SaveIG)', type: 'mp3', quality: '320 kbps', url: `https://saveig.app/en?url=${encodeURIComponent(cleanUrl)}`, badge: 'Direct MP3' },
         ],
         extractedAt: new Date().toISOString(),
       };
@@ -245,6 +247,7 @@ export class VideoDownloaderService {
         duration: 'Video Clip',
         thumbnail: SAMPLE_LINKS.facebook.thumbnail,
         videoUrl: '/samples/sample_video.mp4',
+        embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=false&t=0`,
         streams: [
           { quality: 'HD', label: 'Facebook HD Video', format: 'mp4', resolution: '1080p', size: 'HD', url: `https://snapsave.app/?url=${encodeURIComponent(cleanUrl)}` },
         ],

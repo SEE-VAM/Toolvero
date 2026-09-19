@@ -359,7 +359,7 @@ export const VideoDownloaderWorkspace: React.FC<VideoDownloaderWorkspaceProps> =
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Embedded Video Player */}
             {videoInfo.embedUrl ? (
-              <div className="w-full md:w-80 shrink-0 rounded-2xl overflow-hidden bg-black aspect-video shadow-md border border-slate-800 relative">
+              <div className={`w-full ${videoInfo.platform === 'instagram' ? 'md:w-72 aspect-[9/16] min-h-[460px]' : 'md:w-80 aspect-video'} shrink-0 rounded-2xl overflow-hidden bg-black shadow-md border border-slate-800 relative`}>
                 <iframe
                   src={videoInfo.embedUrl}
                   title={videoInfo.title}
@@ -419,6 +419,19 @@ export const VideoDownloaderWorkspace: React.FC<VideoDownloaderWorkspaceProps> =
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => {
+                            if (videoInfo?.url) {
+                              try {
+                                navigator.clipboard.writeText(videoInfo.url);
+                                onShowToast({
+                                  type: 'success',
+                                  message: 'Reel link copied! Opening downloader...',
+                                });
+                              } catch {
+                                // ignore
+                              }
+                            }
+                          }}
                           className={`flex items-center justify-between p-3.5 rounded-2xl font-semibold text-sm shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer ${
                             link.type === 'mp3'
                               ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/20'
