@@ -23,9 +23,9 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   // Checks for environment variable or configured ID
   const clientId = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ADSENSE_CLIENT_ID) 
     ? (import.meta as any).env.VITE_ADSENSE_CLIENT_ID 
-    : 'ca-pub-XXXXXXXXXXXXXXXX';
+    : 'ca-pub-8043431725904194';
 
-  const isConfigured = clientId && !clientId.includes('XXXX');
+  const isConfigured = Boolean(clientId && !clientId.includes('XXXX'));
 
   useEffect(() => {
     if (isConfigured && !isLoaded.current && typeof window !== 'undefined') {

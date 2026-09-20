@@ -1,3 +1,1 @@
-﻿# Google AdSense ads.txt for QuickVero
-# Replace pub-XXXXXXXXXXXXXXXX with your actual Google AdSense Publisher ID (e.g., pub-1234567890123456)
-google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+google.com, pub-8043431725904194, DIRECT, f08c47fec0942fa0
