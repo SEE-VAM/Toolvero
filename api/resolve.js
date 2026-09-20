@@ -1,11 +1,34 @@
-﻿import cakkatrok from 'cakkatrok-instagram-downloader';
+import cakkatrok from 'cakkatrok-instagram-downloader';
+import { snapsave } from 'snapsave-media-downloader';
+import { Innertube, Platform } from 'youtubei.js';
 
-const INVIDIOUS_INSTANCES = [
-  'https://invidious.f5.si/api/v1/videos/',
-  'https://inv.nadeko.net/api/v1/videos/',
-  'https://invidious.tiekoetter.com/api/v1/videos/',
-  'https://yt.chocolatemoo53.com/api/v1/videos/'
-];
+// Initialize platform shim for YouTube cipher eval
+Platform.shim.eval = async (data) => new Function(data.output)();
+
+let ytInstance = null;
+async function getYT() {
+  if (!ytInstance) {
+    ytInstance = await Innertube.create({ client_type: 'ANDROID' });
+  }
+  return ytInstance;
+}
+
+function unwrapCdnUrl(inputUrl) {
+  if (!inputUrl) return inputUrl;
+  try {
+    const u = new URL(inputUrl);
+    const token = u.searchParams.get('token');
+    if (token) {
+      const parts = token.split('.');
+      if (parts.length >= 2) {
+        const payload = Buffer.from(parts[1], 'base64url').toString('utf8');
+        const data = JSON.parse(payload);
+        if (data.url) return data.url;
+      }
+    }
+  } catch {}
+  return inputUrl;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +47,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. YouTube Resolution
+    // 1. YouTube Resolution via Innertube (High-speed & reliable)
     if (platform === 'youtube' || /youtube\.com|youtu\.be/.test(targetUrl)) {
       const ytMatch = targetUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
       const ytId = ytMatch ? ytMatch[1] : null;
@@ -33,50 +56,73 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'Invalid YouTube URL' });
       }
 
-      for (const base of INVIDIOUS_INSTANCES) {
+      try {
+        const yt = await getYT();
+        const info = await yt.getBasicInfo(ytId);
+        const directFmt = (info.streaming_data?.formats || []).find((f) => f.url);
+        const title = info.basic_info.title || `YouTube Video (${ytId})`;
+        const author = info.basic_info.author || 'YouTube Channel';
+        const durationSec = info.basic_info.duration || 0;
+        const duration = `${Math.floor(durationSec / 60)}:${String(durationSec % 60).padStart(2, '0')}`;
+        const thumbnail = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+        const streamUrl = `/api/stream?ytId=${ytId}&type=mp4`;
+        const audioStreamUrl = `/api/stream?ytId=${ytId}&type=mp3`;
+
+        const streams = [
+          {
+            quality: '360p',
+            label: 'MP4 Video (H.264 + Audio)',
+            format: 'mp4',
+            resolution: '640x360',
+            size: directFmt?.content_length ? `${(directFmt.content_length / 1024 / 1024).toFixed(1)} MB` : 'Standard HD',
+            url: streamUrl
+          },
+          {
+            quality: 'MP3',
+            label: 'Audio MP3',
+            format: 'mp3',
+            resolution: 'Audio Only',
+            size: 'High Quality',
+            url: audioStreamUrl
+          }
+        ];
+
+        return res.status(200).json({
+          success: true,
+          data: {
+            id: ytId,
+            title,
+            author,
+            duration,
+            thumbnail,
+            videoUrl: streamUrl,
+            audioUrl: audioStreamUrl,
+            directUrl: directFmt?.url || undefined,
+            streams,
+            platform: 'youtube',
+            platformName: 'YouTube'
+          }
+        });
+      } catch (ytErr) {
+        console.warn('Innertube direct resolution failed, attempting oEmbed fallback:', ytErr.message);
         try {
-          const ytRes = await fetch(`${base}${ytId}`, {
-            signal: AbortSignal.timeout(6000),
-            headers: { 'Accept': 'application/json' }
-          });
-          if (ytRes.ok) {
-            const data = await ytRes.json();
-            const formatStreams = data.formatStreams || [];
-            const adaptive = data.adaptiveFormats || [];
-
-            // Find best video streams
-            const v1080 = adaptive.find(f => f.type && f.type.includes('video/mp4') && (f.resolution === '1080p' || f.qualityLabel === '1080p'));
-            const v720 = adaptive.find(f => f.type && f.type.includes('video/mp4') && (f.resolution === '720p' || f.qualityLabel === '720p')) || formatStreams.find(f => f.resolution === '720p');
-            const v360 = formatStreams.find(f => f.resolution === '360p') || adaptive.find(f => f.type && f.type.includes('video/mp4') && f.resolution === '360p');
-
-            const bestVideo = v1080?.url || v720?.url || v360?.url || formatStreams[0]?.url || adaptive.find(f => f.type && f.type.includes('video/mp4'))?.url;
-            const bestAudio = adaptive.find(a => a.type && a.type.includes('audio/mp4'))?.url || adaptive.find(a => a.type && a.type.includes('audio'))?.url;
-
-            const streams = [];
-            if (v1080?.url) {
-              streams.push({ quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1920x1080', size: '1080p', url: v1080.url });
-            }
-            if (v720?.url) {
-              streams.push({ quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '1280x720', size: '720p', url: v720.url });
-            }
-            if (v360?.url) {
-              streams.push({ quality: '360p', label: 'SD 360p (MP4)', format: 'mp4', resolution: '640x360', size: '360p', url: v360.url });
-            }
-            if (streams.length === 0 && bestVideo) {
-              streams.push({ quality: 'HD', label: 'Standard MP4 Video', format: 'mp4', resolution: 'HD', size: 'MP4', url: bestVideo });
-            }
-
+          const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`);
+          if (oembedRes.ok) {
+            const odata = await oembedRes.json();
             return res.status(200).json({
               success: true,
               data: {
                 id: ytId,
-                title: data.title || `YouTube Video (${ytId})`,
-                author: data.author || 'YouTube Channel',
-                duration: `${Math.floor((data.lengthSeconds || 0) / 60)}:${String((data.lengthSeconds || 0) % 60).padStart(2, '0')}`,
-                thumbnail: `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
-                videoUrl: bestVideo,
-                audioUrl: bestAudio,
-                streams,
+                title: odata.title || `YouTube Video (${ytId})`,
+                author: odata.author_name || 'YouTube Creator',
+                duration: 'YouTube Video',
+                thumbnail: odata.thumbnail_url || `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`,
+                videoUrl: `/api/stream?ytId=${ytId}&type=mp4`,
+                audioUrl: `/api/stream?ytId=${ytId}&type=mp3`,
+                streams: [
+                  { quality: '360p', label: 'MP4 Video', format: 'mp4', resolution: '640x360', size: 'Standard', url: `/api/stream?ytId=${ytId}&type=mp4` },
+                  { quality: 'MP3', label: 'Audio MP3', format: 'mp3', resolution: 'Audio Only', size: 'HQ', url: `/api/stream?ytId=${ytId}&type=mp3` }
+                ],
                 platform: 'youtube',
                 platformName: 'YouTube'
               }
@@ -88,15 +134,49 @@ export default async function handler(req, res) {
 
     // 2. Instagram Resolution
     if (platform === 'instagram' || /instagram\.com|instagr\.am/.test(targetUrl)) {
+      const reelMatch = targetUrl.match(/(?:reel|p|tv|reels)\/([a-zA-Z0-9_-]+)/);
+      const reelCode = reelMatch ? reelMatch[1] : '';
+
+      // Try snapsave first
+      try {
+        const snapRes = await snapsave(targetUrl);
+        if (snapRes && snapRes.data && snapRes.data.media && snapRes.data.media.length > 0) {
+          const firstMedia = snapRes.data.media.find((m) => m.type === 'video') || snapRes.data.media[0];
+          const unwrappedUrl = unwrapCdnUrl(firstMedia.url);
+          const isVideo = firstMedia.type === 'video';
+          const streamUrl = `/api/stream?url=${encodeURIComponent(unwrappedUrl)}&type=mp4`;
+
+          return res.status(200).json({
+            success: true,
+            data: {
+              id: reelCode || Math.random().toString(36).substring(7),
+              title: `Instagram ${isVideo ? 'Reel' : 'Photo'} (${reelCode || 'Media'})`,
+              author: '@instagram_creator',
+              duration: 'Reel',
+              thumbnail: unwrapCdnUrl(firstMedia.thumbnail) || (reelCode ? `https://www.instagram.com/p/${reelCode}/media/?size=l` : ''),
+              videoUrl: streamUrl,
+              audioUrl: streamUrl,
+              streams: [
+                { quality: 'HD', label: 'Instagram HD MP4', format: 'mp4', resolution: '1080x1920', size: 'Full HD', url: streamUrl }
+              ],
+              platform: 'instagram',
+              platformName: 'Instagram',
+              isVideo
+            }
+          });
+        }
+      } catch (snapErr) {
+        console.warn('Snapsave IG error:', snapErr.message);
+      }
+
+      // Fallback to cakkatrok
       try {
         const igRes = await cakkatrok(targetUrl);
         if (igRes && igRes.media && igRes.media.length > 0) {
-          const firstMedia = igRes.media.find(m => m.type === 'video') || igRes.media[0];
-          const videoUrl = firstMedia.url;
+          const firstMedia = igRes.media.find((m) => m.type === 'video') || igRes.media[0];
+          const unwrappedUrl = unwrapCdnUrl(firstMedia.url);
           const isVideo = firstMedia.type === 'video';
-
-          const reelMatch = targetUrl.match(/(?:reel|p|tv|reels)\/([a-zA-Z0-9_-]+)/);
-          const reelCode = reelMatch ? reelMatch[1] : '';
+          const streamUrl = `/api/stream?url=${encodeURIComponent(unwrappedUrl)}&type=mp4`;
 
           return res.status(200).json({
             success: true,
@@ -106,10 +186,10 @@ export default async function handler(req, res) {
               author: '@instagram_creator',
               duration: 'Reel',
               thumbnail: reelCode ? `https://www.instagram.com/p/${reelCode}/media/?size=l` : '',
-              videoUrl: videoUrl,
-              audioUrl: videoUrl,
+              videoUrl: streamUrl,
+              audioUrl: streamUrl,
               streams: [
-                { quality: 'HD', label: 'Instagram HD MP4', format: 'mp4', resolution: '1080x1920', size: 'Full HD', url: videoUrl }
+                { quality: 'HD', label: 'Instagram HD MP4', format: 'mp4', resolution: '1080x1920', size: 'Full HD', url: streamUrl }
               ],
               platform: 'instagram',
               platformName: 'Instagram',
@@ -118,11 +198,43 @@ export default async function handler(req, res) {
           });
         }
       } catch (igErr) {
-        console.error('Cakkatrok IG error:', igErr.message);
+        console.warn('Cakkatrok IG error:', igErr.message);
       }
     }
 
-    // 3. TikTok Resolution
+    // 3. Facebook Resolution
+    if (platform === 'facebook' || /facebook\.com|fb\.watch|fb\.com/.test(targetUrl)) {
+      try {
+        const fbRes = await snapsave(targetUrl);
+        if (fbRes && fbRes.data && fbRes.data.media && fbRes.data.media.length > 0) {
+          const firstMedia = fbRes.data.media.find((m) => m.type === 'video') || fbRes.data.media[0];
+          const unwrappedUrl = unwrapCdnUrl(firstMedia.url);
+          const streamUrl = `/api/stream?url=${encodeURIComponent(unwrappedUrl)}&type=mp4`;
+
+          return res.status(200).json({
+            success: true,
+            data: {
+              id: Math.random().toString(36).substring(7),
+              title: 'Facebook Video',
+              author: 'Facebook Creator',
+              duration: 'Video',
+              thumbnail: unwrapCdnUrl(firstMedia.thumbnail) || '',
+              videoUrl: streamUrl,
+              audioUrl: streamUrl,
+              streams: [
+                { quality: 'HD', label: 'Facebook HD MP4', format: 'mp4', resolution: '1080p', size: 'HD', url: streamUrl }
+              ],
+              platform: 'facebook',
+              platformName: 'Facebook'
+            }
+          });
+        }
+      } catch (fbErr) {
+        console.warn('Facebook error:', fbErr.message);
+      }
+    }
+
+    // 4. TikTok Resolution
     if (platform === 'tiktok' || /tiktok\.com/.test(targetUrl)) {
       try {
         const tkRes = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(targetUrl)}`, {
@@ -134,6 +246,7 @@ export default async function handler(req, res) {
             const tk = tkData.data;
             const videoUrl = tk.play.startsWith('http') ? tk.play : `https://www.tikwm.com${tk.play}`;
             const audioUrl = tk.music ? (tk.music.startsWith('http') ? tk.music : `https://www.tikwm.com${tk.music}`) : undefined;
+            const streamUrl = `/api/stream?url=${encodeURIComponent(videoUrl)}&type=mp4`;
             return res.status(200).json({
               success: true,
               data: {
@@ -142,11 +255,11 @@ export default async function handler(req, res) {
                 author: tk.author?.unique_id ? `@${tk.author.unique_id}` : '@tiktok_user',
                 duration: `${Math.floor((tk.duration || 15) / 60)}:${String((tk.duration || 15) % 60).padStart(2, '0')}`,
                 thumbnail: tk.cover,
-                videoUrl,
-                audioUrl,
+                videoUrl: streamUrl,
+                audioUrl: audioUrl ? `/api/stream?url=${encodeURIComponent(audioUrl)}&type=mp3` : streamUrl,
                 streams: [
-                  { quality: 'HD', label: 'HD MP4 (No Watermark)', format: 'mp4', resolution: '1080x1920', size: `${((tk.size || 15000000) / 1024 / 1024).toFixed(1)} MB`, url: videoUrl },
-                  { quality: 'SD', label: 'Standard MP4', format: 'mp4', resolution: '720x1280', size: 'Standard', url: videoUrl }
+                  { quality: 'HD', label: 'HD MP4 (No Watermark)', format: 'mp4', resolution: '1080x1920', size: `${((tk.size || 15000000) / 1024 / 1024).toFixed(1)} MB`, url: streamUrl },
+                  { quality: 'SD', label: 'Standard MP4', format: 'mp4', resolution: '720x1280', size: 'Standard', url: streamUrl }
                 ],
                 platform: 'tiktok',
                 platformName: 'TikTok'
@@ -157,7 +270,39 @@ export default async function handler(req, res) {
       } catch {}
     }
 
-    return res.status(404).json({ success: false, error: 'Could not extract direct stream for this link. Please try again.' });
+    // 5. Twitter / X Resolution
+    if (platform === 'twitter' || /twitter\.com|x\.com/.test(targetUrl)) {
+      try {
+        const twRes = await snapsave(targetUrl);
+        if (twRes && twRes.data && twRes.data.media && twRes.data.media.length > 0) {
+          const firstMedia = twRes.data.media.find((m) => m.type === 'video') || twRes.data.media[0];
+          const unwrappedUrl = unwrapCdnUrl(firstMedia.url);
+          const streamUrl = `/api/stream?url=${encodeURIComponent(unwrappedUrl)}&type=mp4`;
+          return res.status(200).json({
+            success: true,
+            data: {
+              id: Math.random().toString(36).substring(7),
+              title: 'Twitter / X Video',
+              author: '@twitter_user',
+              duration: 'Clip',
+              thumbnail: unwrapCdnUrl(firstMedia.thumbnail) || '',
+              videoUrl: streamUrl,
+              audioUrl: streamUrl,
+              streams: [
+                { quality: 'HD', label: 'HD MP4 Video', format: 'mp4', resolution: 'HD', size: 'HD', url: streamUrl }
+              ],
+              platform: 'twitter',
+              platformName: 'Twitter / X'
+            }
+          });
+        }
+      } catch {}
+    }
+
+    return res.status(404).json({
+      success: false,
+      error: 'Could not extract direct stream for this link. The video may be private, restricted, or unavailable. Please verify the URL.'
+    });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }

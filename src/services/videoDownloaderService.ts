@@ -1,4 +1,4 @@
-﻿import { audioBufferToMp3Blob } from './audioProcessor';
+import { audioBufferToMp3Blob } from './audioProcessor';
 import { sanitizeFilename } from '../utils/fileHelpers';
 
 export type VideoPlatform = 'instagram' | 'facebook' | 'youtube' | 'tiktok' | 'twitter' | 'generic';
@@ -6,7 +6,7 @@ export type VideoPlatform = 'instagram' | 'facebook' | 'youtube' | 'tiktok' | 't
 export interface VideoStreamOption {
   quality: string;
   label: string;
-  format: 'mp4' | 'webm';
+  format: 'mp4' | 'webm' | 'mp3';
   resolution?: string;
   size?: string;
   url: string;
@@ -176,54 +176,28 @@ export class VideoDownloaderService {
       // Continue to client-side direct resolvers
     }
 
-    // 3. Client-side fallback for YouTube (using high-speed public Invidious instances)
+    // 3. Client-side fallback for YouTube (direct stream proxy routing)
     if (platform === 'youtube') {
       const ytMatch = cleanUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
       const ytId = ytMatch ? ytMatch[1] : null;
 
       if (ytId) {
         let ytTitle = `YouTube Video (${ytId})`;
-        let ytAuthor = 'YouTube Channel';
+        let ytAuthor = 'YouTube Creator';
         let ytThumb = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
-        let resolvedVideoUrl = '';
-        let resolvedAudioUrl = '';
-        const streams: VideoStreamOption[] = [];
 
-        const invidiousBases = [
-          'https://invidious.f5.si/api/v1/videos/',
-          'https://inv.nadeko.net/api/v1/videos/',
-          'https://yt.chocolatemoo53.com/api/v1/videos/'
-        ];
+        try {
+          const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${ytId}&format=json`);
+          if (oembedRes.ok) {
+            const odata = await oembedRes.json();
+            if (odata.title) ytTitle = odata.title;
+            if (odata.author_name) ytAuthor = odata.author_name;
+            if (odata.thumbnail_url) ytThumb = odata.thumbnail_url;
+          }
+        } catch {}
 
-        for (const base of invidiousBases) {
-          try {
-            const res = await fetch(`${base}${ytId}`, { signal: AbortSignal.timeout(5000) });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.title) ytTitle = data.title;
-              if (data.author) ytAuthor = data.author;
-              const formatStreams = data.formatStreams || [];
-              const adaptive = data.adaptiveFormats || [];
-
-              const v1080 = adaptive.find((f: any) => f.type?.includes('video/mp4') && (f.resolution === '1080p' || f.qualityLabel === '1080p'));
-              const v720 = adaptive.find((f: any) => f.type?.includes('video/mp4') && (f.resolution === '720p' || f.qualityLabel === '720p')) || formatStreams.find((f: any) => f.resolution === '720p');
-              const v360 = formatStreams.find((f: any) => f.resolution === '360p') || adaptive.find((f: any) => f.type?.includes('video/mp4') && f.resolution === '360p');
-
-              resolvedVideoUrl = v1080?.url || v720?.url || v360?.url || formatStreams[0]?.url || '';
-              const audioObj = adaptive.find((a: any) => a.type?.includes('audio/mp4')) || adaptive.find((a: any) => a.type?.includes('audio'));
-              resolvedAudioUrl = audioObj?.url || '';
-
-              if (v1080?.url) streams.push({ quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1920x1080', size: '1080p', url: v1080.url });
-              if (v720?.url) streams.push({ quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '1280x720', size: '720p', url: v720.url });
-              if (v360?.url) streams.push({ quality: '360p', label: 'SD 360p (MP4)', format: 'mp4', resolution: '640x360', size: '360p', url: v360.url });
-              break;
-            }
-          } catch {}
-        }
-
-        if (streams.length === 0 && resolvedVideoUrl) {
-          streams.push({ quality: 'HD', label: 'HD MP4 Video', format: 'mp4', resolution: 'HD', size: 'HD', url: resolvedVideoUrl });
-        }
+        const streamUrl = `/api/stream?ytId=${ytId}&type=mp4`;
+        const audioStreamUrl = `/api/stream?ytId=${ytId}&type=mp3`;
 
         return {
           id: ytId,
@@ -234,13 +208,13 @@ export class VideoDownloaderService {
           author: ytAuthor,
           duration: 'YouTube Video',
           thumbnail: ytThumb,
-          videoUrl: resolvedVideoUrl || `https://www.youtube.com/watch?v=${ytId}`,
-          audioUrl: resolvedAudioUrl,
+          videoUrl: streamUrl,
+          audioUrl: audioStreamUrl,
           videoId: ytId,
           embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}`,
-          streams: streams.length > 0 ? streams : [
-            { quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1920x1080', size: 'Full HD', url: resolvedVideoUrl || cleanUrl },
-            { quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '1280x720', size: 'HD', url: resolvedVideoUrl || cleanUrl },
+          streams: [
+            { quality: '360p', label: 'Standard MP4 Video (H.264 + Audio)', format: 'mp4', resolution: '640x360', size: 'Standard HD', url: streamUrl },
+            { quality: 'MP3', label: 'Audio MP3', format: 'mp3', resolution: 'Audio Only', size: 'High Quality', url: audioStreamUrl },
           ],
           extractedAt: new Date().toISOString(),
         };
@@ -259,6 +233,7 @@ export class VideoDownloaderService {
             const tk = data.data;
             const videoUrl = tk.play.startsWith('http') ? tk.play : `https://www.tikwm.com${tk.play}`;
             const audioUrl = tk.music ? (tk.music.startsWith('http') ? tk.music : `https://www.tikwm.com${tk.music}`) : undefined;
+            const streamUrl = `/api/stream?url=${encodeURIComponent(videoUrl)}&type=mp4`;
             return {
               id: tk.id || Math.random().toString(36).substring(7),
               url: cleanUrl,
@@ -268,11 +243,11 @@ export class VideoDownloaderService {
               author: tk.author?.unique_id ? `@${tk.author.unique_id}` : '@tiktok_user',
               duration: `${Math.floor((tk.duration || 15) / 60)}:${String((tk.duration || 15) % 60).padStart(2, '0')}`,
               thumbnail: tk.cover || SAMPLE_LINKS.tiktok.thumbnail,
-              videoUrl,
-              audioUrl,
+              videoUrl: streamUrl,
+              audioUrl: audioUrl ? `/api/stream?url=${encodeURIComponent(audioUrl)}&type=mp3` : streamUrl,
               streams: [
-                { quality: 'HD', label: 'HD MP4 (No Watermark)', format: 'mp4', resolution: '1080x1920', size: `${((tk.size || 15000000) / 1024 / 1024).toFixed(1)} MB`, url: videoUrl },
-                { quality: 'SD', label: 'Standard MP4', format: 'mp4', resolution: '720x1280', size: 'Standard', url: videoUrl },
+                { quality: 'HD', label: 'HD MP4 (No Watermark)', format: 'mp4', resolution: '1080x1920', size: `${((tk.size || 15000000) / 1024 / 1024).toFixed(1)} MB`, url: streamUrl },
+                { quality: 'SD', label: 'Standard MP4', format: 'mp4', resolution: '720x1280', size: 'Standard', url: streamUrl },
               ],
               extractedAt: new Date().toISOString(),
             };
@@ -281,119 +256,93 @@ export class VideoDownloaderService {
       } catch {}
     }
 
-    // 5. Client-side fallback for Instagram
-    if (platform === 'instagram') {
-      const reelMatch = cleanUrl.match(/(?:reel|p|tv|reels)\/([a-zA-Z0-9_-]+)/);
-      const reelCode = reelMatch ? reelMatch[1] : '';
-      const author = '@instagram_creator';
-      const igTitle = reelCode ? `Instagram Reel (${reelCode})` : 'Instagram Reel';
-      const embedUrl = reelCode ? `https://www.instagram.com/reel/${reelCode}/embed/` : undefined;
+    // 5. Sample Link Presets (Used only if user explicitly clicks a preset demo sample)
+    const sample = SAMPLE_LINKS[platform] || SAMPLE_LINKS.generic;
+    const isExplicitSample = cleanUrl === sample.url || cleanUrl.includes('/samples/');
 
+    if (isExplicitSample) {
       return {
-        id: reelCode || Math.random().toString(36).substring(7),
+        id: Math.random().toString(36).substring(7),
         url: cleanUrl,
-        platform: 'instagram',
-        platformName: 'Instagram',
-        title: igTitle,
-        author: author,
-        duration: 'Reel',
-        thumbnail: reelCode ? `https://www.instagram.com/p/${reelCode}/media/?size=l` : SAMPLE_LINKS.instagram.thumbnail,
-        videoUrl: cleanUrl,
-        embedUrl,
+        platform,
+        platformName,
+        title: sample.title,
+        author: sample.author,
+        duration: sample.duration,
+        thumbnail: sample.thumbnail,
+        videoUrl: sample.videoUrl,
+        isSample: true,
         streams: [
-          { quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1080x1920', size: 'Full HD', url: cleanUrl },
-          { quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '720x1280', size: 'HD', url: cleanUrl },
+          { quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1920x1080', size: '18.4 MB', url: sample.videoUrl },
+          { quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '1280x720', size: '11.2 MB', url: sample.videoUrl },
         ],
         extractedAt: new Date().toISOString(),
       };
     }
 
-    // 6. Generic / Fallback
-    const sample = SAMPLE_LINKS[platform] || SAMPLE_LINKS.generic;
-    const isSample = cleanUrl === sample.url || cleanUrl.includes('/samples/');
-
-    return {
-      id: Math.random().toString(36).substring(7),
-      url: cleanUrl,
-      platform,
-      platformName,
-      title: sample.title,
-      author: sample.author,
-      duration: sample.duration,
-      thumbnail: sample.thumbnail,
-      videoUrl: isSample ? sample.videoUrl : cleanUrl,
-      isSample,
-      streams: [
-        { quality: '1080p', label: 'Full HD 1080p (MP4)', format: 'mp4', resolution: '1920x1080', size: '18.4 MB', url: isSample ? sample.videoUrl : cleanUrl },
-        { quality: '720p', label: 'HD 720p (MP4)', format: 'mp4', resolution: '1280x720', size: '11.2 MB', url: isSample ? sample.videoUrl : cleanUrl },
-      ],
-      extractedAt: new Date().toISOString(),
-    };
+    // 6. Honest Error Handling - Never secretly substitute sample videos
+    throw new Error(
+      `Unable to load this ${platformName} video. The video may be private, age-restricted, or removed. Please check the URL and try again.`
+    );
   }
 
   /**
    * Fetches an ArrayBuffer for media with multiple fallback strategies
    */
   async fetchMediaArrayBuffer(mediaUrl: string, onProgress?: (percent: number) => void): Promise<ArrayBuffer> {
-    onProgress?.(25);
-    // 1. Direct fetch
+    onProgress?.(20);
+
+    // 1. If already an internal stream proxy URL, fetch directly
+    if (mediaUrl.startsWith('/api/stream')) {
+      try {
+        const res = await fetch(mediaUrl);
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('text/html')) {
+            onProgress?.(60);
+            const buf = await res.arrayBuffer();
+            if (buf && buf.byteLength > 1000) return buf;
+          }
+        }
+      } catch {}
+    }
+
+    onProgress?.(35);
+    // 2. Direct fetch
     try {
       const directRes = await fetch(mediaUrl, { mode: 'cors' });
       if (directRes.ok) {
-        onProgress?.(50);
+        onProgress?.(60);
         const buf = await directRes.arrayBuffer();
         if (buf && buf.byteLength > 1000) return buf;
       }
     } catch {}
 
-    onProgress?.(40);
-    // 2. Stream proxy / CORS proxies
+    onProgress?.(50);
+    // 3. Stream proxy / CORS proxies
     const proxies = [
-      `/api/stream?url=${encodeURIComponent(mediaUrl)}&filename=media&type=mp4`,
+      mediaUrl.startsWith('/api/stream')
+        ? mediaUrl
+        : `/api/stream?url=${encodeURIComponent(mediaUrl)}&filename=media&type=mp4`,
       `https://corsproxy.io/?${encodeURIComponent(mediaUrl)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(mediaUrl)}`,
     ];
 
     for (const proxy of proxies) {
       try {
-        const res = await fetch(proxy, { signal: AbortSignal.timeout(7000) });
+        const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
-          onProgress?.(65);
-          const buf = await res.arrayBuffer();
-          if (buf && buf.byteLength > 1000) return buf;
+          const contentType = res.headers.get('content-type') || '';
+          if (!contentType.includes('text/html')) {
+            onProgress?.(75);
+            const buf = await res.arrayBuffer();
+            if (buf && buf.byteLength > 1000) return buf;
+          }
         }
       } catch {}
     }
 
-    throw new Error('CORS_RESTRICTED');
-  }
-
-  /**
-   * Synthesizes audio buffer as fallback
-   */
-  private async synthesizeAmbientAudio(audioContext: AudioContext): Promise<AudioBuffer> {
-    const duration = 15;
-    const sampleRate = audioContext.sampleRate || 44100;
-    const offlineCtx = new OfflineAudioContext(2, sampleRate * duration, sampleRate);
-
-    const frequencies = [261.63, 329.63, 392.00, 523.25];
-    frequencies.forEach((freq, idx) => {
-      const osc = offlineCtx.createOscillator();
-      const gain = offlineCtx.createGain();
-      osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
-      osc.frequency.setValueAtTime(freq, 0);
-
-      gain.gain.setValueAtTime(0.08, 0);
-      gain.gain.exponentialRampToValueAtTime(0.02, duration - 1);
-      gain.gain.linearRampToValueAtTime(0, duration);
-
-      osc.connect(gain);
-      gain.connect(offlineCtx.destination);
-      osc.start(idx * 0.15);
-      osc.stop(duration);
-    });
-
-    return await offlineCtx.startRendering();
+    throw new Error('Unable to stream media bytes. The source file may be CORS-restricted or unavailable.');
   }
 
   /**
@@ -403,13 +352,27 @@ export class VideoDownloaderService {
     onProgress?.(15);
     const cleanFilename = sanitizeFilename(filename, 'mp4');
 
-    // 1. Try our serverless stream proxy endpoint on QuickVero (/api/stream)
-    const proxyStreamUrl = `/api/stream?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp4`;
+    // Build stream proxy URL without double-encoding /api/stream
+    let proxyStreamUrl = '';
+    if (streamUrl.startsWith('/api/stream')) {
+      const u = new URL(streamUrl, window.location.origin);
+      u.searchParams.set('filename', cleanFilename);
+      u.searchParams.set('type', 'mp4');
+      proxyStreamUrl = u.pathname + u.search;
+    } else {
+      proxyStreamUrl = `/api/stream?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp4`;
+    }
 
     try {
       onProgress?.(35);
       const res = await fetch(proxyStreamUrl);
       if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        // Ensure not an HTML error page masquerading as MP4
+        if (contentType.includes('text/html')) {
+          throw new Error('Server returned an HTML error webpage instead of media.');
+        }
+
         onProgress?.(70);
         const blob = await res.blob();
         if (blob && blob.size > 1000) {
@@ -426,33 +389,35 @@ export class VideoDownloaderService {
           return;
         }
       }
-    } catch {
-      // Continue to direct fetch
+    } catch (e: any) {
+      console.warn('Proxy download attempt failed:', e.message);
     }
 
-    // 2. Direct fetch and Blob download
-    try {
-      onProgress?.(50);
-      const directRes = await fetch(streamUrl, { mode: 'cors' });
-      if (directRes.ok) {
-        const blob = await directRes.blob();
-        if (blob && blob.size > 1000) {
-          onProgress?.(90);
-          const objectUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = objectUrl;
-          a.download = cleanFilename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-          onProgress?.(100);
-          return;
+    // Direct fetch and Blob download fallback if not internal
+    if (!streamUrl.startsWith('/api/stream')) {
+      try {
+        onProgress?.(50);
+        const directRes = await fetch(streamUrl, { mode: 'cors' });
+        if (directRes.ok) {
+          const blob = await directRes.blob();
+          if (blob && blob.size > 1000) {
+            onProgress?.(90);
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = cleanFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+            onProgress?.(100);
+            return;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
 
-    // 3. Fallback: Browser direct attachment anchor trigger
+    // Direct anchor trigger fallback
     onProgress?.(90);
     const a = document.createElement('a');
     a.href = proxyStreamUrl;
@@ -475,26 +440,37 @@ export class VideoDownloaderService {
     const cleanFilename = sanitizeFilename(filename, 'mp3');
 
     // 1. Try our serverless MP3 stream proxy on QuickVero (/api/stream)
-    const proxyStreamUrl = `/api/stream?url=${encodeURIComponent(mediaUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp3`;
+    let proxyStreamUrl = '';
+    if (mediaUrl.startsWith('/api/stream')) {
+      const u = new URL(mediaUrl, window.location.origin);
+      u.searchParams.set('filename', cleanFilename);
+      u.searchParams.set('type', 'mp3');
+      proxyStreamUrl = u.pathname + u.search;
+    } else {
+      proxyStreamUrl = `/api/stream?url=${encodeURIComponent(mediaUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp3`;
+    }
 
     try {
       onProgress?.(35);
       const res = await fetch(proxyStreamUrl);
       if (res.ok) {
-        onProgress?.(70);
-        const blob = await res.blob();
-        if (blob && blob.size > 1000) {
-          onProgress?.(95);
-          const objectUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = objectUrl;
-          a.download = cleanFilename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-          onProgress?.(100);
-          return;
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('text/html')) {
+          onProgress?.(70);
+          const blob = await res.blob();
+          if (blob && blob.size > 1000) {
+            onProgress?.(95);
+            const objectUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = objectUrl;
+            a.download = cleanFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
+            onProgress?.(100);
+            return;
+          }
         }
       }
     } catch {}
@@ -502,20 +478,10 @@ export class VideoDownloaderService {
     // 2. Client-side audio extraction & conversion via Web Audio & lamejs
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     const audioContext = new AudioCtx();
-    let audioBuffer: AudioBuffer | null = null;
 
-    try {
-      const arrayBuffer = await this.fetchMediaArrayBuffer(mediaUrl, onProgress);
-      onProgress?.(70);
-      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    } catch {
-      onProgress?.(75);
-      audioBuffer = await this.synthesizeAmbientAudio(audioContext);
-    }
-
-    if (!audioBuffer) {
-      audioBuffer = await this.synthesizeAmbientAudio(audioContext);
-    }
+    const arrayBuffer = await this.fetchMediaArrayBuffer(mediaUrl, onProgress);
+    onProgress?.(70);
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
     onProgress?.(90);
     const audioBlob = audioBufferToMp3Blob(audioBuffer, 192);

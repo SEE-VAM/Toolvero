@@ -10,14 +10,18 @@
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
+    "@distube/ytdl-core": "^4.16.12",
     "@jerrycoder/instagram-api": "^2.5.9",
     "cakkatrok-instagram-downloader": "^2.0.2",
     "canvas-confetti": "^1.9.3",
+    "fbdl-core": "^1.0.2",
     "instagram-url-direct": "^2.0.7",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "snapsave-media-downloader": "^2.5.1",
+    "youtubei.js": "^18.0.0"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",

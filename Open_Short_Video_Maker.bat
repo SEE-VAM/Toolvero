@@ -1,0 +1,3 @@
+﻿@echo off
+echo Opening QuickVero YouTube Short Video Generator...
+start "" "%~dp0QuickVero_Short_Video_Maker.html"
