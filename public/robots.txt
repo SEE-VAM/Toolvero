@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://quickvero.com/sitemap.xml
+Sitemap: https://quickvero.vercel.app/sitemap.xml
