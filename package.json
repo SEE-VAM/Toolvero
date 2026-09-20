@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
+    "@jerrycoder/instagram-api": "^2.5.9",
+    "cakkatrok-instagram-downloader": "^2.0.2",
     "canvas-confetti": "^1.9.3",
+    "instagram-url-direct": "^2.0.7",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",

@@ -62,6 +62,16 @@ export const PrivacyPolicyPage: React.FC = () => {
               To maintain service uptime and understand tool popularity, we may collect aggregated, non-personally identifiable diagnostic events (e.g., page views, error counts, and browser user-agent types).
             </p>
           </section>
+
+          <section className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">5. Advertising &amp; Third-Party Partners (Google AdSense)</h2>
+            <p>
+              QuickVero displays advertisements served by Google AdSense and accredited third-party advertising partners to fund ongoing server and development costs. Google, as a third-party vendor, uses cookies (including the DoubleClick cookie) to serve relevant advertisements to users based on visits to this site and other websites across the Internet.
+            </p>
+            <p>
+              Users may opt out of personalized advertising at any time by visiting Google&apos;s <a href="https://adssettings.google.com/" target="_blank" rel="noopener noreferrer" className="text-brand-600 dark:text-brand-400 underline">Ads Settings</a> or through the Network Advertising Initiative / <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" className="text-brand-600 dark:text-brand-400 underline">aboutads.info</a> consumer choice opt-out page.
+            </p>
+          </section>
         </div>
       </div>
     </div>
