@@ -4,23 +4,11 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-async function getYT(clientType = 'MWEB') {
-  let cookie;
-  try {
-    const res = await fetch('https://www.youtube.com/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9'
-      },
-      signal: AbortSignal.timeout(4000)
-    });
-    cookie = res.headers.get('set-cookie') || undefined;
-  } catch {}
-
+async function getYT(clientType = 'ANDROID') {
   return await Innertube.create({
     client_type: clientType,
-    cookie,
-    generate_session_locally: false
+    cookie: process.env.YOUTUBE_COOKIE || undefined,
+    generate_session_locally: true
   });
 }
 
@@ -63,37 +51,81 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. YouTube streaming via Innertube (Real guest session bypasses datacenter bot detection)
+    // 1. YouTube streaming via Innertube (Android client bypasses datacenter bot detection)
     if (extractedYtId) {
       let yt;
       let info;
+      let directStreamUrl;
+
+      // Strategy A: ANDROID client format decipher
       try {
-        yt = await getYT('MWEB');
-        info = await yt.getBasicInfo(extractedYtId);
-      } catch (err) {
-        console.warn('MWEB getBasicInfo failed, falling back to ANDROID:', err.message);
         yt = await getYT('ANDROID');
         info = await yt.getBasicInfo(extractedYtId);
+        const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
+        if (format) {
+          directStreamUrl = await format.decipher(yt.session.player);
+        }
+      } catch (err) {
+        console.warn('ANDROID decipher failed, trying ANDROID_VR:', err.message);
+        try {
+          yt = await getYT('ANDROID_VR');
+          info = await yt.getBasicInfo(extractedYtId);
+          const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
+          if (format) {
+            directStreamUrl = await format.decipher(yt.session.player);
+          }
+        } catch (vrErr) {
+          console.warn('ANDROID_VR decipher failed:', vrErr.message);
+        }
       }
 
-      const isAudio = type === 'mp3' || type === 'audio';
+      const isAudio = type === 'mp3' || type === 'audio' || type === '128k';
       const videoTitle = info?.basic_info?.title || extractedYtId;
       const cleanFilename = (filename && filename !== 'QuickVero_Media' ? filename : videoTitle).replace(/[^a-zA-Z0-9_-]/g, '_');
       const safeExt = isAudio ? 'm4a' : 'mp4';
       const contentType = isAudio ? 'audio/mp4' : 'video/mp4';
 
-      // Stream via innertube download stream (Format 18: MP4 H.264 + AAC audio)
-      const stream = await yt.download(extractedYtId, {
-        type: 'video+audio',
-        quality: 'best'
-      });
+      // If direct stream URL is found, stream directly via high-speed fetch
+      if (directStreamUrl) {
+        const upstreamHeaders = {
+          'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
+        };
+        if (req.headers.range) {
+          upstreamHeaders['Range'] = req.headers.range;
+        }
 
-      // ONLY set attachment header AFTER stream is successfully created
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
+        const upstreamRes = await fetch(directStreamUrl, { headers: upstreamHeaders });
 
-      const nodeStream = Readable.from(stream);
-      return nodeStream.pipe(res);
+        if (upstreamRes.ok || upstreamRes.status === 206) {
+          res.status(upstreamRes.status);
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
+
+          const clen = upstreamRes.headers.get('content-length');
+          if (clen) res.setHeader('Content-Length', clen);
+          const crange = upstreamRes.headers.get('content-range');
+          if (crange) res.setHeader('Content-Range', crange);
+          const acceptRanges = upstreamRes.headers.get('accept-ranges');
+          if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
+
+          const nodeStream = Readable.fromWeb(upstreamRes.body);
+          return nodeStream.pipe(res);
+        }
+      }
+
+      // Strategy B: Fallback to yt.download
+      if (yt) {
+        const stream = await yt.download(extractedYtId, {
+          type: 'video+audio',
+          quality: 'best'
+        });
+
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
+
+        const nodeStream = Readable.from(stream);
+        return nodeStream.pipe(res);
+      }
     }
 
     if (!targetUrl) {

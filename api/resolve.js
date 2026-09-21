@@ -5,23 +5,11 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-async function getYT(clientType = 'MWEB') {
-  let cookie;
-  try {
-    const res = await fetch('https://www.youtube.com/', {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9'
-      },
-      signal: AbortSignal.timeout(4000)
-    });
-    cookie = res.headers.get('set-cookie') || undefined;
-  } catch {}
-
+async function getYT(clientType = 'ANDROID') {
   return await Innertube.create({
     client_type: clientType,
-    cookie,
-    generate_session_locally: false
+    cookie: process.env.YOUTUBE_COOKIE || undefined,
+    generate_session_locally: true
   });
 }
 
@@ -59,7 +47,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. YouTube Resolution via Innertube (High-speed & reliable)
+    // 1. YouTube Resolution via Innertube (High-speed & reliable Android client)
     if (platform === 'youtube' || /youtube\.com|youtu\.be/.test(targetUrl)) {
       const ytMatch = targetUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/))([\w-]{11})/);
       const ytId = ytMatch ? ytMatch[1] : null;
@@ -72,14 +60,17 @@ export default async function handler(req, res) {
         let yt;
         let info;
         try {
-          yt = await getYT('MWEB');
-          info = await yt.getBasicInfo(ytId);
-        } catch (mwebErr) {
-          console.warn('MWEB resolve failed, trying ANDROID:', mwebErr.message);
           yt = await getYT('ANDROID');
           info = await yt.getBasicInfo(ytId);
+        } catch (androidErr) {
+          console.warn('ANDROID resolve failed, trying ANDROID_VR:', androidErr.message);
+          yt = await getYT('ANDROID_VR');
+          info = await yt.getBasicInfo(ytId);
         }
-        const directFmt = (info.streaming_data?.formats || []).find((f) => f.url);
+
+        const formats = info.streaming_data?.formats || [];
+        const has720p = formats.some((f) => f.quality_label?.includes('720'));
+        const directFmt = formats.find((f) => f.url || f.itag === 18);
         const title = info.basic_info.title || `YouTube Video (${ytId})`;
         const author = info.basic_info.author || 'YouTube Channel';
         const durationSec = info.basic_info.duration || 0;
@@ -87,41 +78,45 @@ export default async function handler(req, res) {
         const thumbnail = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
         const streamUrl = `/api/stream?ytId=${ytId}&type=mp4`;
         const audioStreamUrl = `/api/stream?ytId=${ytId}&type=mp3`;
+        const estSize = directFmt?.content_length ? `${(directFmt.content_length / 1024 / 1024).toFixed(1)} MB` : 'Standard MP4';
 
-        const streams = [
-          {
-            quality: '1080p',
-            label: 'Full HD 1080p MP4',
-            format: 'mp4',
-            resolution: '1920x1080',
-            size: directFmt?.content_length ? `${(directFmt.content_length / 1024 / 1024).toFixed(1)} MB` : 'Full HD',
-            url: streamUrl
-          },
-          {
+        const streams = [];
+        if (has720p) {
+          streams.push({
             quality: '720p',
-            label: 'HD 720p MP4',
+            label: 'HD 720p MP4 (Video + Audio)',
             format: 'mp4',
             resolution: '1280x720',
             size: 'HD',
-            url: streamUrl
-          },
+            url: `${streamUrl}&quality=720p`
+          });
+        }
+        streams.push(
           {
             quality: '360p',
-            label: 'Standard 360p MP4',
+            label: 'Standard MP4 (Video & Audio)',
             format: 'mp4',
             resolution: '640x360',
-            size: 'Standard',
+            size: estSize,
             url: streamUrl
           },
           {
             quality: 'MP3',
-            label: 'Audio MP3 (320 kbps)',
+            label: 'Audio MP3 (320 kbps Studio Quality)',
             format: 'mp3',
             resolution: 'Audio Only',
-            size: 'Studio Quality',
+            size: 'HQ MP3',
+            url: audioStreamUrl
+          },
+          {
+            quality: '128k',
+            label: 'Audio MP3 (128 kbps Fast Download)',
+            format: 'mp3',
+            resolution: 'Audio Only',
+            size: '128 kbps',
             url: audioStreamUrl
           }
-        ];
+        );
 
         return res.status(200).json({
           success: true,
@@ -156,10 +151,9 @@ export default async function handler(req, res) {
                 videoUrl: `/api/stream?ytId=${ytId}&type=mp4`,
                 audioUrl: `/api/stream?ytId=${ytId}&type=mp3`,
                 streams: [
-                  { quality: '1080p', label: 'Full HD 1080p MP4', format: 'mp4', resolution: '1920x1080', size: 'Full HD', url: `/api/stream?ytId=${ytId}&type=mp4` },
-                  { quality: '720p', label: 'HD 720p MP4', format: 'mp4', resolution: '1280x720', size: 'HD', url: `/api/stream?ytId=${ytId}&type=mp4` },
-                  { quality: '360p', label: 'Standard 360p MP4', format: 'mp4', resolution: '640x360', size: 'Standard', url: `/api/stream?ytId=${ytId}&type=mp4` },
-                  { quality: 'MP3', label: 'Audio MP3 (320 kbps)', format: 'mp3', resolution: 'Audio Only', size: 'HQ', url: `/api/stream?ytId=${ytId}&type=mp3` }
+                  { quality: '360p', label: 'Standard MP4 (Video & Audio)', format: 'mp4', resolution: '640x360', size: 'Standard MP4', url: `/api/stream?ytId=${ytId}&type=mp4` },
+                  { quality: 'MP3', label: 'Audio MP3 (320 kbps Studio Quality)', format: 'mp3', resolution: 'Audio Only', size: 'HQ MP3', url: `/api/stream?ytId=${ytId}&type=mp3` },
+                  { quality: '128k', label: 'Audio MP3 (128 kbps Fast Download)', format: 'mp3', resolution: 'Audio Only', size: '128 kbps', url: `/api/stream?ytId=${ytId}&type=mp3` }
                 ],
                 platform: 'youtube',
                 platformName: 'YouTube'

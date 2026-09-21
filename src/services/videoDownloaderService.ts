@@ -213,8 +213,9 @@ export class VideoDownloaderService {
           videoId: ytId,
           embedUrl: `https://www.youtube-nocookie.com/embed/${ytId}`,
           streams: [
-            { quality: '360p', label: 'Standard MP4 Video (H.264 + Audio)', format: 'mp4', resolution: '640x360', size: 'Standard HD', url: streamUrl },
-            { quality: 'MP3', label: 'Audio MP3', format: 'mp3', resolution: 'Audio Only', size: 'High Quality', url: audioStreamUrl },
+            { quality: '360p', label: 'Standard MP4 (Video & Audio)', format: 'mp4', resolution: '640x360', size: 'Standard MP4', url: streamUrl },
+            { quality: 'MP3', label: 'Audio MP3 (320 kbps Studio Quality)', format: 'mp3', resolution: 'Audio Only', size: 'HQ MP3', url: audioStreamUrl },
+            { quality: '128k', label: 'Audio MP3 (128 kbps Fast Download)', format: 'mp3', resolution: 'Audio Only', size: '128 kbps', url: audioStreamUrl },
           ],
           extractedAt: new Date().toISOString(),
         };
@@ -333,7 +334,7 @@ export class VideoDownloaderService {
         const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const contentType = res.headers.get('content-type') || '';
-          if (!contentType.includes('text/html')) {
+          if (!contentType.includes('text/html') && !contentType.includes('application/json')) {
             onProgress?.(75);
             const buf = await res.arrayBuffer();
             if (buf && buf.byteLength > 1000) return buf;
