@@ -27,8 +27,8 @@ export const Mp4ToMp3Controls: React.FC<Mp4ToMp3ControlsProps> = ({ onConvert, i
             onChange={(e) => setFormat(e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
           >
-            <option value="mp3">MP3 (Universal - 320 kbps)</option>
-            <option value="wav">WAV (Lossless Uncompressed)</option>
+            <option value="mp3">MP3 Audio (.mp3)</option>
+            <option value="wav">WAV Lossless (.wav)</option>
           </select>
         </div>
 
@@ -38,19 +38,22 @@ export const Mp4ToMp3Controls: React.FC<Mp4ToMp3ControlsProps> = ({ onConvert, i
           </label>
           <select
             value={bitrate}
+            disabled={format === 'wav'}
             onChange={(e) => setBitrate(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
           >
             <option value="320k">320 kbps (High Fidelity Studio)</option>
             <option value="192k">192 kbps (Standard Quality)</option>
-            <option value="128k">128 kbps (Compact / Speech)</option>
+            <option value="128k">128 kbps (Compact / Fast Download)</option>
           </select>
         </div>
       </div>
 
       <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/60 text-xs text-brand-800 dark:text-brand-300 flex items-center gap-2.5">
         <Volume2 className="w-4 h-4 text-brand-500 shrink-0" />
-        <span>Extracts and decodes the native AAC audio track directly in your browser with zero quality degradation.</span>
+        <span>
+          Extracts and encodes {format === 'wav' ? 'lossless 16-bit PCM WAV' : `studio-grade MP3 at ${bitrate}`} directly in your browser.
+        </span>
       </div>
 
       <button
@@ -59,7 +62,7 @@ export const Mp4ToMp3Controls: React.FC<Mp4ToMp3ControlsProps> = ({ onConvert, i
         className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-semibold text-sm bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-brand-500/20 disabled:opacity-50 transition-all cursor-pointer"
       >
         <Sparkles className="w-4 h-4" />
-        <span>Extract &amp; Convert to MP3</span>
+        <span>Extract &amp; Convert to {format.toUpperCase()} ({format === 'wav' ? 'Lossless' : bitrate})</span>
       </button>
     </div>
   );
