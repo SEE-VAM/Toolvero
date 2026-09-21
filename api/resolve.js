@@ -8,7 +8,10 @@ Platform.shim.eval = async (data) => new Function(data.output)();
 let ytInstance = null;
 async function getYT() {
   if (!ytInstance) {
-    ytInstance = await Innertube.create({ client_type: 'ANDROID' });
+    ytInstance = await Innertube.create({
+      client_type: 'ANDROID',
+      generate_session_locally: true
+    });
   }
   return ytInstance;
 }
