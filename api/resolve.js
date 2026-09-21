@@ -5,15 +5,26 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-let ytInstance = null;
-async function getYT() {
-  if (!ytInstance) {
-    ytInstance = await Innertube.create({
+let ytMwebInstance = null;
+let ytAndroidInstance = null;
+
+async function getYT(clientType = 'MWEB') {
+  if (clientType === 'MWEB') {
+    if (!ytMwebInstance) {
+      ytMwebInstance = await Innertube.create({
+        client_type: 'MWEB',
+        generate_session_locally: true
+      });
+    }
+    return ytMwebInstance;
+  }
+  if (!ytAndroidInstance) {
+    ytAndroidInstance = await Innertube.create({
       client_type: 'ANDROID',
       generate_session_locally: true
     });
   }
-  return ytInstance;
+  return ytAndroidInstance;
 }
 
 function unwrapCdnUrl(inputUrl) {
@@ -60,8 +71,16 @@ export default async function handler(req, res) {
       }
 
       try {
-        const yt = await getYT();
-        const info = await yt.getBasicInfo(ytId);
+        let yt;
+        let info;
+        try {
+          yt = await getYT('MWEB');
+          info = await yt.getBasicInfo(ytId);
+        } catch (mwebErr) {
+          console.warn('MWEB resolve failed, trying ANDROID:', mwebErr.message);
+          yt = await getYT('ANDROID');
+          info = await yt.getBasicInfo(ytId);
+        }
         const directFmt = (info.streaming_data?.formats || []).find((f) => f.url);
         const title = info.basic_info.title || `YouTube Video (${ytId})`;
         const author = info.basic_info.author || 'YouTube Channel';

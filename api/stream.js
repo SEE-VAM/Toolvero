@@ -4,15 +4,26 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-let ytInstance = null;
-async function getYT() {
-  if (!ytInstance) {
-    ytInstance = await Innertube.create({
+let ytMwebInstance = null;
+let ytAndroidInstance = null;
+
+async function getYT(clientType = 'MWEB') {
+  if (clientType === 'MWEB') {
+    if (!ytMwebInstance) {
+      ytMwebInstance = await Innertube.create({
+        client_type: 'MWEB',
+        generate_session_locally: true
+      });
+    }
+    return ytMwebInstance;
+  }
+  if (!ytAndroidInstance) {
+    ytAndroidInstance = await Innertube.create({
       client_type: 'ANDROID',
       generate_session_locally: true
     });
   }
-  return ytInstance;
+  return ytAndroidInstance;
 }
 
 function unwrapCdnUrl(inputUrl) {
@@ -54,32 +65,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. YouTube streaming via Innertube (Format 18: MP4 H.264 + AAC audio)
+    // 1. YouTube streaming via Innertube (MWEB client bypasses datacenter bot detection)
     if (extractedYtId) {
-      const yt = await getYT();
-      const info = await yt.getBasicInfo(extractedYtId);
-      const formats = info.streaming_data?.formats || [];
-      const directFmt = formats.find((f) => f.url);
-
-      if (directFmt && directFmt.url) {
-        targetUrl = directFmt.url;
-      } else {
-        // Fallback: innertube download stream
-        const stream = await yt.download(extractedYtId, {
-          type: type === 'mp3' || type === 'audio' ? 'audio' : 'video+audio',
-          quality: 'best'
-        });
-
-        const cleanFilename = filename.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const safeExt = type === 'mp3' || type === 'audio' ? 'm4a' : 'mp4';
-        const contentType = safeExt === 'm4a' ? 'audio/mp4' : 'video/mp4';
-
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
-
-        const nodeStream = Readable.from(stream);
-        return nodeStream.pipe(res);
+      let yt;
+      let info;
+      try {
+        yt = await getYT('MWEB');
+        info = await yt.getBasicInfo(extractedYtId);
+      } catch (err) {
+        console.warn('MWEB getBasicInfo failed, falling back to ANDROID:', err.message);
+        yt = await getYT('ANDROID');
+        info = await yt.getBasicInfo(extractedYtId);
       }
+
+      const isAudio = type === 'mp3' || type === 'audio';
+      const videoTitle = info?.basic_info?.title || extractedYtId;
+      const cleanFilename = (filename && filename !== 'QuickVero_Media' ? filename : videoTitle).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const safeExt = isAudio ? 'm4a' : 'mp4';
+      const contentType = isAudio ? 'audio/mp4' : 'video/mp4';
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
+
+      // Stream via innertube download stream (Format 18: MP4 H.264 + AAC audio)
+      const stream = await yt.download(extractedYtId, {
+        type: 'video+audio',
+        quality: 'best'
+      });
+
+      const nodeStream = Readable.from(stream);
+      return nodeStream.pipe(res);
     }
 
     if (!targetUrl) {

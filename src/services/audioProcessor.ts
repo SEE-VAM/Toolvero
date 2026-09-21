@@ -138,14 +138,22 @@ async function safeDecodeAudio(
   arrayBuffer: ArrayBuffer,
   fileName: string
 ): Promise<AudioBuffer> {
-  // Check file minimum size (must be at least 2KB to contain valid media header)
-  if (arrayBuffer.byteLength < 2048) {
-    const preview = new TextDecoder().decode(new Uint8Array(arrayBuffer.slice(0, 200)));
-    if (preview.includes('error') || preview.includes('html') || preview.includes('Streaming')) {
-      throw new Error(
-        `The file "${fileName}" is an incomplete or corrupted download (${(arrayBuffer.byteLength / 1024).toFixed(1)} KB). Please supply a valid video or audio file.`
-      );
-    }
+  // Check if file is an error message or webpage masquerading as media
+  const headerPreview = new TextDecoder().decode(new Uint8Array(arrayBuffer.slice(0, Math.min(512, arrayBuffer.byteLength))));
+  if (
+    headerPreview.includes('<!DOCTYPE') ||
+    headerPreview.includes('<html') ||
+    headerPreview.includes('Streaming error') ||
+    headerPreview.includes('Video is login required') ||
+    headerPreview.includes('"error"')
+  ) {
+    throw new Error(
+      `The file "${fileName}" contains an error message from a previous interrupted download (${(arrayBuffer.byteLength / 1024).toFixed(0)} KB). Please download the video fresh from QuickVero.`
+    );
+  }
+
+  // Check file minimum size (must be at least 4KB to contain a valid media header)
+  if (arrayBuffer.byteLength < 4096) {
     throw new Error(
       `The file "${fileName}" is too small (${arrayBuffer.byteLength} bytes) to contain playable audio data.`
     );
@@ -155,10 +163,17 @@ async function safeDecodeAudio(
   const audioContext = new AudioCtx();
 
   try {
-    return await audioContext.decodeAudioData(arrayBuffer);
+    // Clone arrayBuffer so detaching during decode doesn't corrupt original memory
+    return await audioContext.decodeAudioData(arrayBuffer.slice(0));
   } catch (err: any) {
+    // Detect truncated/incomplete download (< 500 KB for a video is almost certainly incomplete)
+    if (arrayBuffer.byteLength < 500 * 1024) {
+      throw new Error(
+        `"${fileName}" is only ${(arrayBuffer.byteLength / 1024).toFixed(0)} KB (an incomplete or interrupted download). Please re-download the full video from QuickVero or upload a complete MP4/WebM file.`
+      );
+    }
     throw new Error(
-      `Could not decode audio from "${fileName}". The video may lack an audio stream or use an unsupported audio format (e.g., Dolby AC-3). Please use MP4, WebM, or WAV files with AAC or MP3 audio.`
+      `Could not decode audio from "${fileName}". The video may lack an audio stream or use an unsupported codec. Please use MP4, WebM, or WAV files with AAC or MP3 audio.`
     );
   } finally {
     if (audioContext.state !== 'closed') {
