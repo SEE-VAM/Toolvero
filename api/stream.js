@@ -4,26 +4,24 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-let ytMwebInstance = null;
-let ytAndroidInstance = null;
-
 async function getYT(clientType = 'MWEB') {
-  if (clientType === 'MWEB') {
-    if (!ytMwebInstance) {
-      ytMwebInstance = await Innertube.create({
-        client_type: 'MWEB',
-        generate_session_locally: true
-      });
-    }
-    return ytMwebInstance;
-  }
-  if (!ytAndroidInstance) {
-    ytAndroidInstance = await Innertube.create({
-      client_type: 'ANDROID',
-      generate_session_locally: true
+  let cookie;
+  try {
+    const res = await fetch('https://www.youtube.com/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9'
+      },
+      signal: AbortSignal.timeout(4000)
     });
-  }
-  return ytAndroidInstance;
+    cookie = res.headers.get('set-cookie') || undefined;
+  } catch {}
+
+  return await Innertube.create({
+    client_type: clientType,
+    cookie,
+    generate_session_locally: false
+  });
 }
 
 function unwrapCdnUrl(inputUrl) {
@@ -65,7 +63,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. YouTube streaming via Innertube (MWEB client bypasses datacenter bot detection)
+    // 1. YouTube streaming via Innertube (Real guest session bypasses datacenter bot detection)
     if (extractedYtId) {
       let yt;
       let info;
@@ -84,14 +82,15 @@ export default async function handler(req, res) {
       const safeExt = isAudio ? 'm4a' : 'mp4';
       const contentType = isAudio ? 'audio/mp4' : 'video/mp4';
 
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
-
       // Stream via innertube download stream (Format 18: MP4 H.264 + AAC audio)
       const stream = await yt.download(extractedYtId, {
         type: 'video+audio',
         quality: 'best'
       });
+
+      // ONLY set attachment header AFTER stream is successfully created
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
 
       const nodeStream = Readable.from(stream);
       return nodeStream.pipe(res);

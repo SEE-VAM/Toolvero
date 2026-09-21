@@ -5,26 +5,24 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-let ytMwebInstance = null;
-let ytAndroidInstance = null;
-
 async function getYT(clientType = 'MWEB') {
-  if (clientType === 'MWEB') {
-    if (!ytMwebInstance) {
-      ytMwebInstance = await Innertube.create({
-        client_type: 'MWEB',
-        generate_session_locally: true
-      });
-    }
-    return ytMwebInstance;
-  }
-  if (!ytAndroidInstance) {
-    ytAndroidInstance = await Innertube.create({
-      client_type: 'ANDROID',
-      generate_session_locally: true
+  let cookie;
+  try {
+    const res = await fetch('https://www.youtube.com/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9'
+      },
+      signal: AbortSignal.timeout(4000)
     });
-  }
-  return ytAndroidInstance;
+    cookie = res.headers.get('set-cookie') || undefined;
+  } catch {}
+
+  return await Innertube.create({
+    client_type: clientType,
+    cookie,
+    generate_session_locally: false
+  });
 }
 
 function unwrapCdnUrl(inputUrl) {
