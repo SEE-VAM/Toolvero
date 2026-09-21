@@ -50,6 +50,9 @@ export default async function handler(req, res) {
     }
   }
 
+  let debugStep = 'init';
+  let innerError = null;
+
   try {
     // 1. YouTube streaming via Innertube (Android client bypasses datacenter bot detection)
     if (extractedYtId) {
@@ -59,23 +62,33 @@ export default async function handler(req, res) {
 
       // Strategy A: ANDROID client format decipher
       try {
+        debugStep = 'android_init';
         yt = await getYT('ANDROID');
+        debugStep = 'android_basic_info';
         info = await yt.getBasicInfo(extractedYtId);
+        debugStep = 'android_choose_format';
         const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
         if (format) {
+          debugStep = 'android_decipher';
           directStreamUrl = await format.decipher(yt.session.player);
         }
       } catch (err) {
-        console.warn('ANDROID decipher failed, trying ANDROID_VR:', err.message);
+        innerError = `ANDROID failed at ${debugStep}: ${err.message}`;
+        console.warn(innerError);
         try {
+          debugStep = 'vr_init';
           yt = await getYT('ANDROID_VR');
+          debugStep = 'vr_basic_info';
           info = await yt.getBasicInfo(extractedYtId);
+          debugStep = 'vr_choose_format';
           const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
           if (format) {
+            debugStep = 'vr_decipher';
             directStreamUrl = await format.decipher(yt.session.player);
           }
         } catch (vrErr) {
-          console.warn('ANDROID_VR decipher failed:', vrErr.message);
+          innerError += ` | VR failed at ${debugStep}: ${vrErr.message}`;
+          console.warn(innerError);
         }
       }
 
@@ -87,6 +100,7 @@ export default async function handler(req, res) {
 
       // If direct stream URL is found, stream directly via high-speed fetch
       if (directStreamUrl) {
+        debugStep = 'upstream_fetch';
         const upstreamHeaders = {
           'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
         };
@@ -95,6 +109,7 @@ export default async function handler(req, res) {
         }
 
         const upstreamRes = await fetch(directStreamUrl, { headers: upstreamHeaders });
+        debugStep = `upstream_status_${upstreamRes.status}`;
 
         if (upstreamRes.ok || upstreamRes.status === 206) {
           res.status(upstreamRes.status);
@@ -108,13 +123,17 @@ export default async function handler(req, res) {
           const acceptRanges = upstreamRes.headers.get('accept-ranges');
           if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
 
+          debugStep = 'piping_body';
           const nodeStream = Readable.fromWeb(upstreamRes.body);
           return nodeStream.pipe(res);
+        } else {
+          innerError = (innerError ? innerError + ' | ' : '') + `Direct fetch returned ${upstreamRes.status}: ${upstreamRes.statusText}`;
         }
       }
 
       // Strategy B: Fallback to yt.download
       if (yt) {
+        debugStep = 'yt.download';
         const stream = await yt.download(extractedYtId, {
           type: 'video+audio',
           quality: 'best'
@@ -132,6 +151,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'URL or ytId parameter is required.' });
     }
 
+    debugStep = 'upstream';
     // 2. Unwrap SnapCDN / RapidCDN JWT tokens to direct CDN URL
     targetUrl = unwrapCdnUrl(decodeURIComponent(targetUrl));
 
@@ -189,6 +209,6 @@ export default async function handler(req, res) {
     console.error('Streaming error:', err);
     // Never send attachment disposition on error
     res.setHeader('Content-Type', 'application/json');
-    res.status(500).json({ error: `Streaming error: ${err.message}` });
+    res.status(500).json({ error: `Streaming error: ${err.message}`, step: debugStep, innerError });
   }
 }
