@@ -368,7 +368,41 @@ export class VideoDownloaderService {
       targetDownloadUrl = streamUrl;
     }
 
-    onProgress?.(60);
+    onProgress?.(50);
+
+    // Pre-flight check: verify stream is available before triggering native browser download
+    // This prevents the browser from downloading corrupted 52-byte error files or failing with "Couldn't download"
+    try {
+      const checkRes = await fetch(targetDownloadUrl, {
+        headers: { 'Range': 'bytes=0-100' },
+        signal: AbortSignal.timeout(6000),
+      });
+      const ctype = checkRes.headers.get('content-type') || '';
+      if (!checkRes.ok && checkRes.status !== 206) {
+        let errMsg = 'Unable to stream this media right now.';
+        try {
+          const errJson = await checkRes.json();
+          if (errJson?.error) errMsg = errJson.error;
+        } catch {}
+        throw new Error(errMsg);
+      }
+      if (ctype.includes('application/json')) {
+        let errMsg = 'Stream returned an error response instead of media.';
+        try {
+          const errJson = await checkRes.json();
+          if (errJson?.error) errMsg = errJson.error;
+        } catch {}
+        throw new Error(errMsg);
+      }
+    } catch (checkErr: any) {
+      if (checkErr.name === 'AbortError' || checkErr.name === 'TimeoutError') {
+        // If slow network timeout, proceed to trigger native download
+      } else {
+        throw checkErr;
+      }
+    }
+
+    onProgress?.(80);
 
     // Trigger instant native browser download
     const a = document.createElement('a');
