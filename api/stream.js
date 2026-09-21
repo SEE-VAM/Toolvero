@@ -35,7 +35,7 @@ function unwrapCdnUrl(inputUrl) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -58,23 +58,24 @@ export default async function handler(req, res) {
     if (extractedYtId) {
       const yt = await getYT();
       const info = await yt.getBasicInfo(extractedYtId);
-      const directFmt = (info.streaming_data?.formats || []).find((f) => f.url);
+      const formats = info.streaming_data?.formats || [];
+      const directFmt = formats.find((f) => f.url);
 
       if (directFmt && directFmt.url) {
         targetUrl = directFmt.url;
       } else {
-        // Direct download stream fallback through Innertube
+        // Fallback: innertube download stream
         const stream = await yt.download(extractedYtId, {
-          type: type === 'mp3' ? 'audio' : 'video+audio',
+          type: type === 'mp3' || type === 'audio' ? 'audio' : 'video+audio',
           quality: 'best'
         });
 
         const cleanFilename = filename.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const safeType = type.toLowerCase() === 'mp3' ? 'mp3' : 'mp4';
-        const contentType = safeType === 'mp3' ? 'audio/mpeg' : 'video/mp4';
+        const safeExt = type === 'mp3' || type === 'audio' ? 'm4a' : 'mp4';
+        const contentType = safeExt === 'm4a' ? 'audio/mp4' : 'video/mp4';
 
         res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeType}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
 
         const nodeStream = Readable.from(stream);
         return nodeStream.pipe(res);
@@ -82,49 +83,66 @@ export default async function handler(req, res) {
     }
 
     if (!targetUrl) {
-      return res.status(400).send('URL or ytId parameter is required.');
+      return res.status(400).json({ error: 'URL or ytId parameter is required.' });
     }
 
     // 2. Unwrap SnapCDN / RapidCDN JWT tokens to direct CDN URL
     targetUrl = unwrapCdnUrl(decodeURIComponent(targetUrl));
 
-    const upstreamRes = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
-      }
-    });
+    const upstreamHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+    };
 
-    if (!upstreamRes.ok) {
-      return res.status(upstreamRes.status).send(`Failed to stream media: ${upstreamRes.statusText}`);
+    if (req.headers.range) {
+      upstreamHeaders['Range'] = req.headers.range;
+    }
+
+    const upstreamRes = await fetch(targetUrl, { headers: upstreamHeaders });
+
+    if (!upstreamRes.ok && upstreamRes.status !== 206) {
+      return res.status(upstreamRes.status).json({
+        error: `Failed to stream media: ${upstreamRes.statusText}`
+      });
     }
 
     const upstreamContentType = upstreamRes.headers.get('content-type') || '';
 
     // CRITICAL PROTECTION: Prevent HTML error page from masquerading as MP4/MP3
     if (upstreamContentType.includes('text/html')) {
-      return res.status(422).send('Error: Upstream server returned a webpage instead of direct media.');
+      return res.status(422).json({
+        error: 'Upstream server returned a webpage instead of direct media.'
+      });
     }
 
     const cleanFilename = filename.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeType = type.toLowerCase() === 'mp3' ? 'mp3' : 'mp4';
-    const contentType = safeType === 'mp3' ? 'audio/mpeg' : (upstreamContentType || 'video/mp4');
+    // Ensure accurate file extension matching actual container
+    const isAudioOnly = type === 'mp3' || type === 'audio';
+    const safeExt = isAudioOnly && (upstreamContentType.includes('audio') || upstreamContentType.includes('mpeg')) ? 'mp3' : 'mp4';
+    const contentType = upstreamContentType || (safeExt === 'mp3' ? 'audio/mpeg' : 'video/mp4');
 
+    res.status(upstreamRes.status);
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeType}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
 
     const clen = upstreamRes.headers.get('content-length');
-    if (clen) {
-      res.setHeader('Content-Length', clen);
-    }
+    if (clen) res.setHeader('Content-Length', clen);
+
+    const crange = upstreamRes.headers.get('content-range');
+    if (crange) res.setHeader('Content-Range', crange);
+
+    const acceptRanges = upstreamRes.headers.get('accept-ranges');
+    if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
 
     if (upstreamRes.body) {
       const nodeStream = Readable.fromWeb(upstreamRes.body);
       nodeStream.pipe(res);
     } else {
-      res.status(500).send('No stream body received.');
+      res.status(500).json({ error: 'No stream body received.' });
     }
   } catch (err) {
     console.error('Streaming error:', err);
-    res.status(500).send(`Streaming error: ${err.message}`);
+    // Never send attachment disposition on error
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ error: `Streaming error: ${err.message}` });
   }
 }

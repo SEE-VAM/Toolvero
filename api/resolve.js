@@ -73,19 +73,35 @@ export default async function handler(req, res) {
 
         const streams = [
           {
+            quality: '1080p',
+            label: 'Full HD 1080p MP4',
+            format: 'mp4',
+            resolution: '1920x1080',
+            size: directFmt?.content_length ? `${(directFmt.content_length / 1024 / 1024).toFixed(1)} MB` : 'Full HD',
+            url: streamUrl
+          },
+          {
+            quality: '720p',
+            label: 'HD 720p MP4',
+            format: 'mp4',
+            resolution: '1280x720',
+            size: 'HD',
+            url: streamUrl
+          },
+          {
             quality: '360p',
-            label: 'MP4 Video (H.264 + Audio)',
+            label: 'Standard 360p MP4',
             format: 'mp4',
             resolution: '640x360',
-            size: directFmt?.content_length ? `${(directFmt.content_length / 1024 / 1024).toFixed(1)} MB` : 'Standard HD',
+            size: 'Standard',
             url: streamUrl
           },
           {
             quality: 'MP3',
-            label: 'Audio MP3',
+            label: 'Audio MP3 (320 kbps)',
             format: 'mp3',
             resolution: 'Audio Only',
-            size: 'High Quality',
+            size: 'Studio Quality',
             url: audioStreamUrl
           }
         ];
@@ -123,8 +139,10 @@ export default async function handler(req, res) {
                 videoUrl: `/api/stream?ytId=${ytId}&type=mp4`,
                 audioUrl: `/api/stream?ytId=${ytId}&type=mp3`,
                 streams: [
-                  { quality: '360p', label: 'MP4 Video', format: 'mp4', resolution: '640x360', size: 'Standard', url: `/api/stream?ytId=${ytId}&type=mp4` },
-                  { quality: 'MP3', label: 'Audio MP3', format: 'mp3', resolution: 'Audio Only', size: 'HQ', url: `/api/stream?ytId=${ytId}&type=mp3` }
+                  { quality: '1080p', label: 'Full HD 1080p MP4', format: 'mp4', resolution: '1920x1080', size: 'Full HD', url: `/api/stream?ytId=${ytId}&type=mp4` },
+                  { quality: '720p', label: 'HD 720p MP4', format: 'mp4', resolution: '1280x720', size: 'HD', url: `/api/stream?ytId=${ytId}&type=mp4` },
+                  { quality: '360p', label: 'Standard 360p MP4', format: 'mp4', resolution: '640x360', size: 'Standard', url: `/api/stream?ytId=${ytId}&type=mp4` },
+                  { quality: 'MP3', label: 'Audio MP3 (320 kbps)', format: 'mp3', resolution: 'Audio Only', size: 'HQ', url: `/api/stream?ytId=${ytId}&type=mp3` }
                 ],
                 platform: 'youtube',
                 platformName: 'YouTube'

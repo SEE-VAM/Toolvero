@@ -132,6 +132,42 @@ export function audioBufferToWavBlob(audioBuffer: AudioBuffer): Blob {
 }
 
 /**
+ * Safely decodes an ArrayBuffer into an AudioBuffer with detailed error handling
+ */
+async function safeDecodeAudio(
+  arrayBuffer: ArrayBuffer,
+  fileName: string
+): Promise<AudioBuffer> {
+  // Check file minimum size (must be at least 2KB to contain valid media header)
+  if (arrayBuffer.byteLength < 2048) {
+    const preview = new TextDecoder().decode(new Uint8Array(arrayBuffer.slice(0, 200)));
+    if (preview.includes('error') || preview.includes('html') || preview.includes('Streaming')) {
+      throw new Error(
+        `The file "${fileName}" is an incomplete or corrupted download (${(arrayBuffer.byteLength / 1024).toFixed(1)} KB). Please supply a valid video or audio file.`
+      );
+    }
+    throw new Error(
+      `The file "${fileName}" is too small (${arrayBuffer.byteLength} bytes) to contain playable audio data.`
+    );
+  }
+
+  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+  const audioContext = new AudioCtx();
+
+  try {
+    return await audioContext.decodeAudioData(arrayBuffer);
+  } catch (err: any) {
+    throw new Error(
+      `Could not decode audio from "${fileName}". The video may lack an audio stream or use an unsupported audio format (e.g., Dolby AC-3). Please use MP4, WebM, or WAV files with AAC or MP3 audio.`
+    );
+  } finally {
+    if (audioContext.state !== 'closed') {
+      audioContext.close().catch(() => {});
+    }
+  }
+}
+
+/**
  * Extracts and converts audio track from MP4 / WebM / Video in the browser
  */
 export async function extractAudioFromVideo(
@@ -140,19 +176,97 @@ export async function extractAudioFromVideo(
   onProgress?: (percent: number) => void
 ): Promise<ProcessResult> {
   onProgress?.(15);
-  const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-  const audioContext = new AudioCtx();
-
-  onProgress?.(30);
   const arrayBuffer = await file.arrayBuffer();
 
-  onProgress?.(55);
-  // Decode audio data from video stream natively in browser
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  onProgress?.(50);
+  const audioBuffer = await safeDecodeAudio(arrayBuffer, file.name);
 
   onProgress?.(80);
   const isWav = options.format === 'wav';
+  const kbps = options.bitrate === '128k' ? 128 : options.bitrate === '192k' ? 192 : options.bitrate === '256k' ? 256 : 320;
+  const audioBlob = isWav
+    ? audioBufferToWavBlob(audioBuffer)
+    : audioBufferToMp3Blob(audioBuffer, kbps);
+
+  onProgress?.(100);
+  const ext = isWav ? 'wav' : 'mp3';
+  const outFilename = sanitizeFilename(file.name, ext);
+
+  return {
+    blob: audioBlob,
+    downloadUrl: URL.createObjectURL(audioBlob),
+    filename: outFilename,
+    originalSize: file.size,
+    processedSize: audioBlob.size,
+    savingsPercentage: Math.max(0, Math.round(((file.size - audioBlob.size) / file.size) * 100)),
+    metadata: {
+      durationSeconds: Math.round(audioBuffer.duration),
+      sampleRate: audioBuffer.sampleRate,
+      channels: audioBuffer.numberOfChannels,
+    },
+  };
+}
+
+/**
+ * Compresses audio files in the browser by re-encoding to an optimized MP3 bitrate
+ */
+export async function compressAudio(
+  file: File,
+  options: { bitrate?: string; quality?: number } = {},
+  onProgress?: (percent: number) => void
+): Promise<ProcessResult> {
+  onProgress?.(15);
+  const arrayBuffer = await file.arrayBuffer();
+
+  onProgress?.(50);
+  const audioBuffer = await safeDecodeAudio(arrayBuffer, file.name);
+
+  onProgress?.(80);
+  let kbps = 128;
+  if (options.bitrate === '64k') kbps = 64;
+  else if (options.bitrate === '96k') kbps = 96;
+  else if (options.bitrate === '128k') kbps = 128;
+  else if (options.bitrate === '192k') kbps = 192;
+  else if (options.bitrate === '320k') kbps = 320;
+
+  const audioBlob = audioBufferToMp3Blob(audioBuffer, kbps);
+
+  onProgress?.(100);
+  const outFilename = sanitizeFilename(file.name, 'mp3');
+
+  return {
+    blob: audioBlob,
+    downloadUrl: URL.createObjectURL(audioBlob),
+    filename: outFilename,
+    originalSize: file.size,
+    processedSize: audioBlob.size,
+    savingsPercentage: Math.max(0, Math.round(((file.size - audioBlob.size) / file.size) * 100)),
+    metadata: {
+      durationSeconds: Math.round(audioBuffer.duration),
+      sampleRate: audioBuffer.sampleRate,
+      channels: audioBuffer.numberOfChannels,
+    },
+  };
+}
+
+/**
+ * Converts audio format (WAV to MP3, MP3 to WAV, OGG/FLAC to MP3/WAV)
+ */
+export async function convertAudioFormat(
+  file: File,
+  options: { targetFormat?: string; bitrate?: string } = {},
+  onProgress?: (percent: number) => void
+): Promise<ProcessResult> {
+  onProgress?.(15);
+  const arrayBuffer = await file.arrayBuffer();
+
+  onProgress?.(50);
+  const audioBuffer = await safeDecodeAudio(arrayBuffer, file.name);
+
+  onProgress?.(80);
+  const isWav = options.targetFormat === 'wav' || options.targetFormat === 'audio/wav';
   const kbps = options.bitrate === '128k' ? 128 : options.bitrate === '192k' ? 192 : 320;
+
   const audioBlob = isWav
     ? audioBufferToWavBlob(audioBuffer)
     : audioBufferToMp3Blob(audioBuffer, kbps);

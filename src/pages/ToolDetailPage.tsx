@@ -11,6 +11,9 @@ import { ImageResizerControls } from '../components/tool/controls/ImageResizerCo
 import { FormatConverterControls } from '../components/tool/controls/FormatConverterControls';
 import { PdfControls } from '../components/tool/controls/PdfControls';
 import { Mp4ToMp3Controls } from '../components/tool/controls/Mp4ToMp3Controls';
+import { AudioCompressorControls } from '../components/tool/controls/AudioCompressorControls';
+import { AudioConverterControls } from '../components/tool/controls/AudioConverterControls';
+import { VideoTrimmerWorkspace } from '../components/tool/controls/VideoTrimmerWorkspace';
 import { HashToolWorkspace } from '../components/tool/controls/HashToolWorkspace';
 import { Base64ToolWorkspace } from '../components/tool/controls/Base64ToolWorkspace';
 import { CalculatorWorkspace } from '../components/tool/controls/CalculatorWorkspace';
@@ -152,6 +155,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
   const isHashTool = tool.id === 'hash-generator';
   const isBase64Tool = tool.id === 'base64-encoder-decoder';
   const isCalculatorTool = tool.id === 'file-size-calculator';
+  const isVideoTrimmer = tool.id === 'video-trimmer';
   const isVideoDownloader =
     tool.id === 'instagram-video-downloader' ||
     tool.id === 'facebook-video-downloader' ||
@@ -160,7 +164,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
     tool.id === 'twitter-video-downloader' ||
     tool.id === 'all-video-downloader' ||
     tool.id.includes('downloader');
-  const isStandaloneUtility = isHashTool || isBase64Tool || isCalculatorTool || isVideoDownloader;
+  const isStandaloneUtility = isHashTool || isBase64Tool || isCalculatorTool || isVideoDownloader || isVideoTrimmer;
 
   return (
     <div className="py-8 sm:py-12">
@@ -178,6 +182,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
           {isHashTool && <HashToolWorkspace />}
           {isBase64Tool && <Base64ToolWorkspace />}
           {isCalculatorTool && <CalculatorWorkspace />}
+          {isVideoTrimmer && <VideoTrimmerWorkspace onShowToast={onShowToast} />}
           {isVideoDownloader && (
             <VideoDownloaderWorkspace tool={tool} onShowToast={onShowToast} />
           )}
@@ -248,14 +253,36 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
                     />
                   )}
 
-                  {(tool.id === 'mp4-to-mp3' || tool.id === 'audio-extractor' || tool.id === 'wav-to-mp3' || tool.id === 'audio-converter') && (
+                  {tool.id === 'audio-compressor' && (
+                    <AudioCompressorControls
+                      onCompress={(opts) => executeProcessing(opts)}
+                      isProcessing={false}
+                      fileSize={selectedFile.size}
+                    />
+                  )}
+
+                  {(tool.id === 'audio-converter' || tool.id === 'wav-to-mp3' || tool.id === 'mp3-to-wav') && (
+                    <AudioConverterControls
+                      defaultFormat={tool.id === 'mp3-to-wav' ? 'wav' : 'mp3'}
+                      onConvert={(opts) => executeProcessing(opts)}
+                      isProcessing={false}
+                    />
+                  )}
+
+                  {(tool.id === 'mp4-to-mp3' || tool.id === 'audio-extractor') && (
                     <Mp4ToMp3Controls
                       onConvert={(opts) => executeProcessing(opts)}
                       isProcessing={false}
                     />
                   )}
 
-                  {tool.engine === 'cloud-ready' && tool.id !== 'mp4-to-mp3' && tool.id !== 'audio-extractor' && tool.id !== 'wav-to-mp3' && tool.id !== 'audio-converter' && (
+                  {tool.engine === 'cloud-ready' &&
+                    tool.id !== 'mp4-to-mp3' &&
+                    tool.id !== 'audio-extractor' &&
+                    tool.id !== 'wav-to-mp3' &&
+                    tool.id !== 'mp3-to-wav' &&
+                    tool.id !== 'audio-converter' &&
+                    tool.id !== 'audio-compressor' && (
                     <CloudToolNotice tool={tool} file={selectedFile} />
                   )}
                 </div>

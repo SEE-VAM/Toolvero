@@ -1,7 +1,8 @@
 import { ProcessResult, ToolDefinition } from '../types/tool';
 import { compressImage, resizeImage, convertImageFormat } from './imageProcessor';
 import { convertImageToPdf } from './fileProcessor';
-import { extractAudioFromVideo } from './audioProcessor';
+import { extractAudioFromVideo, compressAudio, convertAudioFormat } from './audioProcessor';
+import { convertVideo, compressVideo, resizeVideo, convertVideoToGif } from './videoProcessor';
 
 export interface ExecutionOptions {
   [key: string]: any;
@@ -55,10 +56,52 @@ export class ToolService {
       }
 
       case 'mp4-to-mp3':
-      case 'audio-extractor':
-      case 'wav-to-mp3':
-      case 'audio-converter': {
+      case 'audio-extractor': {
         return await extractAudioFromVideo(file, options, onProgress);
+      }
+
+      case 'audio-compressor': {
+        return await compressAudio(file, options, onProgress);
+      }
+
+      case 'audio-converter': {
+        return await convertAudioFormat(
+          file,
+          { targetFormat: options.targetFormat || 'mp3', bitrate: options.bitrate || '320k' },
+          onProgress
+        );
+      }
+
+      case 'wav-to-mp3': {
+        return await convertAudioFormat(
+          file,
+          { targetFormat: 'mp3', bitrate: options.bitrate || '320k' },
+          onProgress
+        );
+      }
+
+      case 'mp3-to-wav': {
+        return await convertAudioFormat(
+          file,
+          { targetFormat: 'wav' },
+          onProgress
+        );
+      }
+
+      case 'video-converter': {
+        return await convertVideo(file, options, onProgress);
+      }
+
+      case 'video-compressor': {
+        return await compressVideo(file, options, onProgress);
+      }
+
+      case 'video-resizer': {
+        return await resizeVideo(file, options, onProgress);
+      }
+
+      case 'video-to-gif': {
+        return await convertVideoToGif(file, options, onProgress);
       }
 
       default: {
@@ -84,7 +127,6 @@ export class ToolService {
     const backendApiUrl = import.meta.env.VITE_BACKEND_API_URL;
 
     if (backendApiUrl) {
-      // Real backend endpoint configured
       onProgress(10);
       const formData = new FormData();
       formData.append('file', file);
@@ -113,7 +155,6 @@ export class ToolService {
         savingsPercentage: 0,
       };
     } else {
-      // Backend not yet configured in this deployment environment
       throw new Error(
         `Cloud processing engine for ${tool.name} requires a connected backend service. Set VITE_BACKEND_API_URL in your environment variables.`
       );

@@ -347,84 +347,37 @@ export class VideoDownloaderService {
 
   /**
    * Downloads a video file directly to the user's computer/phone from QuickVero
+  /**
+   * Downloads a video file directly to the user's computer/phone from QuickVero
    */
   async downloadVideoFile(streamUrl: string, filename: string, onProgress?: (percent: number) => void): Promise<void> {
-    onProgress?.(15);
+    onProgress?.(20);
     const cleanFilename = sanitizeFilename(filename, 'mp4');
 
-    // Build stream proxy URL without double-encoding /api/stream
-    let proxyStreamUrl = '';
+    // Build direct stream URL
+    let targetDownloadUrl = '';
     if (streamUrl.startsWith('/api/stream')) {
       const u = new URL(streamUrl, window.location.origin);
       u.searchParams.set('filename', cleanFilename);
       u.searchParams.set('type', 'mp4');
-      proxyStreamUrl = u.pathname + u.search;
+      targetDownloadUrl = u.pathname + u.search;
+    } else if (streamUrl.startsWith('http')) {
+      targetDownloadUrl = `/api/stream?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp4`;
     } else {
-      proxyStreamUrl = `/api/stream?url=${encodeURIComponent(streamUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp4`;
+      targetDownloadUrl = streamUrl;
     }
 
-    try {
-      onProgress?.(35);
-      const res = await fetch(proxyStreamUrl);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        // Ensure not an HTML error page masquerading as MP4
-        if (contentType.includes('text/html')) {
-          throw new Error('Server returned an HTML error webpage instead of media.');
-        }
+    onProgress?.(60);
 
-        onProgress?.(70);
-        const blob = await res.blob();
-        if (blob && blob.size > 1000) {
-          onProgress?.(95);
-          const objectUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = objectUrl;
-          a.download = cleanFilename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-          onProgress?.(100);
-          return;
-        }
-      }
-    } catch (e: any) {
-      console.warn('Proxy download attempt failed:', e.message);
-    }
-
-    // Direct fetch and Blob download fallback if not internal
-    if (!streamUrl.startsWith('/api/stream')) {
-      try {
-        onProgress?.(50);
-        const directRes = await fetch(streamUrl, { mode: 'cors' });
-        if (directRes.ok) {
-          const blob = await directRes.blob();
-          if (blob && blob.size > 1000) {
-            onProgress?.(90);
-            const objectUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = objectUrl;
-            a.download = cleanFilename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-            onProgress?.(100);
-            return;
-          }
-        }
-      } catch {}
-    }
-
-    // Direct anchor trigger fallback
-    onProgress?.(90);
+    // Trigger instant native browser download
     const a = document.createElement('a');
-    a.href = proxyStreamUrl;
-    a.download = cleanFilename;
+    a.href = targetDownloadUrl;
+    a.download = `${cleanFilename}.mp4`;
+    a.target = '_blank';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
     onProgress?.(100);
   }
 
@@ -439,58 +392,40 @@ export class VideoDownloaderService {
     onProgress?.(15);
     const cleanFilename = sanitizeFilename(filename, 'mp3');
 
-    // 1. Try our serverless MP3 stream proxy on QuickVero (/api/stream)
-    let proxyStreamUrl = '';
-    if (mediaUrl.startsWith('/api/stream')) {
-      const u = new URL(mediaUrl, window.location.origin);
-      u.searchParams.set('filename', cleanFilename);
-      u.searchParams.set('type', 'mp3');
-      proxyStreamUrl = u.pathname + u.search;
-    } else {
-      proxyStreamUrl = `/api/stream?url=${encodeURIComponent(mediaUrl)}&filename=${encodeURIComponent(cleanFilename)}&type=mp3`;
-    }
+    // 1. Fetch media stream bytes
+    onProgress?.(30);
+    const arrayBuffer = await this.fetchMediaArrayBuffer(mediaUrl, (p) => {
+      onProgress?.(30 + Math.floor(p * 0.3));
+    });
 
-    try {
-      onProgress?.(35);
-      const res = await fetch(proxyStreamUrl);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('text/html')) {
-          onProgress?.(70);
-          const blob = await res.blob();
-          if (blob && blob.size > 1000) {
-            onProgress?.(95);
-            const objectUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = objectUrl;
-            a.download = cleanFilename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
-            onProgress?.(100);
-            return;
-          }
-        }
-      }
-    } catch {}
-
-    // 2. Client-side audio extraction & conversion via Web Audio & lamejs
+    // 2. Decode audio track using Web Audio API
+    onProgress?.(65);
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     const audioContext = new AudioCtx();
 
-    const arrayBuffer = await this.fetchMediaArrayBuffer(mediaUrl, onProgress);
-    onProgress?.(70);
-    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    let audioBuffer: AudioBuffer;
+    try {
+      audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    } catch (decodeErr: any) {
+      throw new Error(
+        'Could not decode audio from this video stream. The video may lack an audio track or use an unsupported audio format.'
+      );
+    } finally {
+      if (audioContext.state !== 'closed') {
+        audioContext.close().catch(() => {});
+      }
+    }
 
-    onProgress?.(90);
-    const audioBlob = audioBufferToMp3Blob(audioBuffer, 192);
+    // 3. Encode into genuine MPEG-1 Layer 3 (MP3) at high quality (320 kbps)
+    onProgress?.(85);
+    const audioBlob = audioBufferToMp3Blob(audioBuffer, 320);
 
+    // 4. Trigger download of the genuine MP3 file
     onProgress?.(100);
     const downloadUrl = URL.createObjectURL(audioBlob);
     const a = document.createElement('a');
     a.href = downloadUrl;
-    a.download = cleanFilename;
+    a.download = `${cleanFilename}.mp3`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
