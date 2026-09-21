@@ -5,9 +5,12 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
+const FALLBACK_VISITOR_DATA = 'Cgt1Nk5INXZ4SWNuayibv8bVBjIKCgJJThIEGgAgJWLfAgrcAjIxLllUPWNua3A5dDVOb0EwTE12TTNRNndxRm43MmJtUmhFYW1JcFNpSDJZY1BFU3JOX3BwTnNubExBaGRqMkdET3h4bjBuWFJrNEcza0FxVHF2QTA1Y0czNUUtTlcxN1N5b3NSWEFoOFllTDhTR0NoWl94VEppcFliMDJNSWs2ZnV0N3JIelYyYjFhbTNKUGRYYWFJd3gwZHhpeDBPNFVCNGJCMWh5MlV6RTJEd0dMQVYxNEtvYWNrN0h2UFA4YnlvbkYyMzJ2a1NHNGJ4RWZMX2ZGeWEzaDBjQ3dqRWdUeXJuRFFvNzUtcTlSNC02T002YjVMOE5LaENIV2xNQVgwQTlnWEhtRVowRjJEZzMyTEJ3bWdocU9IR3hHTGlmQTQzZzd3Y2htQlFTWEQ2Z2dYSkE2OWhTVW1FdHpPczRQWnVFSVF4SG51ZHltOFAzTEtJaEd3YmVlODdCUQ%3D%3D';
+
 async function getYT(clientType = 'ANDROID') {
   return await Innertube.create({
     client_type: clientType,
+    visitor_data: process.env.YOUTUBE_VISITOR_DATA || FALLBACK_VISITOR_DATA,
     cookie: process.env.YOUTUBE_COOKIE || undefined,
     generate_session_locally: true
   });
