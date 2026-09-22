@@ -171,6 +171,19 @@ export default async function handler(req, res) {
         });
         return nodeStream.pipe(res);
       }
+
+      const cookieUsed = getEffectiveCookie();
+      return res.status(502).json({
+        error: 'Unable to stream this YouTube video right now.',
+        step: debugStep,
+        innerError,
+        cookieInfo: {
+          hasEnvCookie: !!process.env.YOUTUBE_COOKIE,
+          envLen: (process.env.YOUTUBE_COOKIE || '').length,
+          usedFallback: cookieUsed === FALLBACK_COOKIE,
+          cookieLen: cookieUsed.length
+        }
+      });
     }
 
     if (!targetUrl) {
