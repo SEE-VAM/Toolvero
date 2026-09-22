@@ -64,40 +64,35 @@ export default async function handler(req, res) {
   let innerError = null;
 
   try {
-    // 1. YouTube streaming via Innertube (Android client bypasses datacenter bot detection)
+    // 1. YouTube streaming via Innertube (Multi-client fallback: MWEB, WEB, ANDROID)
     if (extractedYtId) {
       let yt;
       let info;
       let directStreamUrl;
+      let successfulClient = null;
 
-      // Strategy A: ANDROID client format decipher
-      try {
-        debugStep = 'android_init';
-        yt = await getYT('ANDROID');
-        debugStep = 'android_basic_info';
-        info = await yt.getBasicInfo(extractedYtId);
-        debugStep = 'android_choose_format';
-        const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
-        if (format) {
-          debugStep = 'android_decipher';
-          directStreamUrl = format.url || (format.signature_cipher ? await format.decipher(yt.session.player) : null);
-        }
-      } catch (err) {
-        innerError = `ANDROID failed at ${debugStep}: ${err.message}`;
-        console.warn(innerError);
+      const clientCandidates = ['MWEB', 'WEB', 'ANDROID', 'ANDROID_VR'];
+      for (const clientType of clientCandidates) {
         try {
-          debugStep = 'vr_init';
-          yt = await getYT('ANDROID_VR');
-          debugStep = 'vr_basic_info';
-          info = await yt.getBasicInfo(extractedYtId);
-          debugStep = 'vr_choose_format';
-          const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
+          debugStep = `${clientType}_init`;
+          const currentYt = await getYT(clientType);
+          debugStep = `${clientType}_basic_info`;
+          const currentInfo = await currentYt.getBasicInfo(extractedYtId);
+          debugStep = `${clientType}_choose_format`;
+          const format = currentInfo.chooseFormat({ type: 'video+audio', quality: 'best' });
           if (format) {
-            debugStep = 'vr_decipher';
-            directStreamUrl = format.url || (format.signature_cipher ? await format.decipher(yt.session.player) : null);
+            debugStep = `${clientType}_decipher`;
+            const resolvedUrl = format.url || (format.signature_cipher ? await format.decipher(currentYt.session.player) : null);
+            if (resolvedUrl) {
+              yt = currentYt;
+              info = currentInfo;
+              directStreamUrl = resolvedUrl;
+              successfulClient = clientType;
+              break;
+            }
           }
-        } catch (vrErr) {
-          innerError += ` | VR failed at ${debugStep}: ${vrErr.message}`;
+        } catch (clientErr) {
+          innerError = (innerError ? innerError + ' | ' : '') + `${clientType} failed at ${debugStep}: ${clientErr.message}`;
           console.warn(innerError);
         }
       }
@@ -114,8 +109,12 @@ export default async function handler(req, res) {
       // If direct stream URL is found, stream directly via high-speed fetch
       if (directStreamUrl) {
         debugStep = 'upstream_fetch';
+        const userAgent = successfulClient === 'ANDROID' || successfulClient === 'ANDROID_VR'
+          ? 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
+          : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+
         const upstreamHeaders = {
-          'User-Agent': 'com.google.android.youtube/19.29.37 (Linux; U; Android 11) gzip'
+          'User-Agent': userAgent
         };
         if (req.headers.range) {
           upstreamHeaders['Range'] = req.headers.range;

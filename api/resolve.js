@@ -69,13 +69,26 @@ export default async function handler(req, res) {
       try {
         let yt;
         let info;
-        try {
-          yt = await getYT('ANDROID');
-          info = await yt.getBasicInfo(ytId);
-        } catch (androidErr) {
-          console.warn('ANDROID resolve failed, trying ANDROID_VR:', androidErr.message);
-          yt = await getYT('ANDROID_VR');
-          info = await yt.getBasicInfo(ytId);
+        const clientCandidates = ['MWEB', 'WEB', 'ANDROID', 'ANDROID_VR'];
+        for (const c of clientCandidates) {
+          try {
+            const currentYt = await getYT(c);
+            const currentInfo = await currentYt.getBasicInfo(ytId);
+            if (currentInfo?.streaming_data?.formats?.length) {
+              yt = currentYt;
+              info = currentInfo;
+              break;
+            } else if (!info) {
+              yt = currentYt;
+              info = currentInfo;
+            }
+          } catch (cErr) {
+            console.warn(`${c} resolve attempt failed:`, cErr.message);
+          }
+        }
+
+        if (!info) {
+          throw new Error('No YouTube client was able to retrieve video info.');
         }
 
         const formats = info.streaming_data?.formats || [];
