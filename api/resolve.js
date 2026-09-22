@@ -5,20 +5,19 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-const FALLBACK_COOKIE = '__Secure-3PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; APISID=pqNwouGLTy8GIMFx/AfiK4p3DhyBEJym29; SAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; __Secure-1PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; _ga=GA1.1.201074170.1774367578; _ga_5JSYX2Q357=GS2.1.s1774367577$o1$g1$t1774367783$j36$l0$h0; SID=g.a000CAno0BvCwTMOPhSjW8KVEDi_nGo27vgzVw9GmTpnXcnCmm6aQgN_w7gTxIQfxei2urDHCwACgYKAa0SARISFQHGX2MiDJiWLjAPrSmJjDR_g3pNKBoVAUF8yKopLb7aW3ObFY_ogDgJTl940076; PREF=f4=4000000&f6=40000000&tz=Asia.Calcutta&f7=100&repeat=NONE&autoplay=true&volume=100&f5=20000; SIDCC=AKEyXzU_Qnj8z04AqiB-oaCGDrK15pypn8CDcSo1pL5cCR9BR2rpR6RChxVEk8dVX9sNsD5-s7dK';
-
 function getEffectiveCookie() {
   const envCookie = process.env.YOUTUBE_COOKIE || '';
   if (envCookie && envCookie.includes('SID=') && envCookie.length > 200) {
     return envCookie;
   }
-  return FALLBACK_COOKIE;
+  return undefined;
 }
 
-async function getYT(clientType = 'ANDROID') {
+async function getYT(clientType = 'MWEB', customCookie = undefined) {
+  const cookie = customCookie !== undefined ? customCookie : getEffectiveCookie();
   return await Innertube.create({
     client_type: clientType,
-    cookie: getEffectiveCookie(),
+    cookie,
     generate_session_locally: true
   });
 }
