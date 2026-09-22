@@ -76,20 +76,26 @@ export default async function handler(req, res) {
         try {
           debugStep = `${clientType}_init`;
           const currentYt = await getYT(clientType);
-          debugStep = `${clientType}_basic_info`;
-          const currentInfo = await currentYt.getBasicInfo(extractedYtId);
-          debugStep = `${clientType}_choose_format`;
-          const format = currentInfo.chooseFormat({ type: 'video+audio', quality: 'best' });
-          if (format) {
-            debugStep = `${clientType}_decipher`;
-            const resolvedUrl = format.url || (format.signature_cipher ? await format.decipher(currentYt.session.player) : null);
-            if (resolvedUrl) {
-              yt = currentYt;
-              info = currentInfo;
-              directStreamUrl = resolvedUrl;
-              successfulClient = clientType;
-              break;
+          let currentInfo;
+          try {
+            debugStep = `${clientType}_basic_info`;
+            currentInfo = await currentYt.getBasicInfo(extractedYtId);
+            debugStep = `${clientType}_choose_format`;
+            const format = currentInfo.chooseFormat({ type: 'video+audio', quality: 'best' });
+            if (format) {
+              debugStep = `${clientType}_decipher`;
+              const resolvedUrl = format.url || (format.signature_cipher ? await format.decipher(currentYt.session.player) : null);
+              if (resolvedUrl) {
+                yt = currentYt;
+                info = currentInfo;
+                directStreamUrl = resolvedUrl;
+                successfulClient = clientType;
+                break;
+              }
             }
+          } catch (formatErr) {
+            const playability = currentInfo?.playability_status ? `${currentInfo.playability_status.status}: ${currentInfo.playability_status.reason || ''}` : 'no-info';
+            throw new Error(`${formatErr.message} [playability: ${playability}]`);
           }
         } catch (clientErr) {
           innerError = (innerError ? innerError + ' | ' : '') + `${clientType} failed at ${debugStep}: ${clientErr.message}`;
