@@ -4,13 +4,12 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-const FALLBACK_VISITOR_DATA = 'Cgt1Nk5INXZ4SWNuayibv8bVBjIKCgJJThIEGgAgJWLfAgrcAjIxLllUPWNua3A5dDVOb0EwTE12TTNRNndxRm43MmJtUmhFYW1JcFNpSDJZY1BFU3JOX3BwTnNubExBaGRqMkdET3h4bjBuWFJrNEcza0FxVHF2QTA1Y0czNUUtTlcxN1N5b3NSWEFoOFllTDhTR0NoWl94VEppcFliMDJNSWs2ZnV0N3JIelYyYjFhbTNKUGRYYWFJd3gwZHhpeDBPNFVCNGJCMWh5MlV6RTJEd0dMQVYxNEtvYWNrN0h2UFA4YnlvbkYyMzJ2a1NHNGJ4RWZMX2ZGeWEzaDBjQ3dqRWdUeXJuRFFvNzUtcTlSNC02T002YjVMOE5LaENIV2xNQVgwQTlnWEhtRVowRjJEZzMyTEJ3bWdocU9IR3hHTGlmQTQzZzd3Y2htQlFTWEQ2Z2dYSkE2OWhTVW1FdHpPczRQWnVFSVF4SG51ZHltOFAzTEtJaEd3YmVlODdCUQ%3D%3D';
+const FALLBACK_COOKIE = '__Secure-3PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; APISID=pqNwouGLTy8GIMFx/AfiK4p3DhyBEJym29; SAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; __Secure-1PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; _ga=GA1.1.201074170.1774367578; _ga_5JSYX2Q357=GS2.1.s1774367577$o1$g1$t1774367783$j36$l0$h0; SID=g.a000CAno0BvCwTMOPhSjW8KVEDi_nGo27vgzVw9GmTpnXcnCmm6aQgN_w7gTxIQfxei2urDHCwACgYKAa0SARISFQHGX2MiDJiWLjAPrSmJjDR_g3pNKBoVAUF8yKopLb7aW3ObFY_ogDgJTl940076; PREF=f4=4000000&f6=40000000&tz=Asia.Calcutta&f7=100&repeat=NONE&autoplay=true&volume=100&f5=20000; SIDCC=AKEyXzU_Qnj8z04AqiB-oaCGDrK15pypn8CDcSo1pL5cCR9BR2rpR6RChxVEk8dVX9sNsD5-s7dK';
 
 async function getYT(clientType = 'ANDROID') {
   return await Innertube.create({
     client_type: clientType,
-    visitor_data: process.env.YOUTUBE_VISITOR_DATA || FALLBACK_VISITOR_DATA,
-    cookie: process.env.YOUTUBE_COOKIE || undefined,
+    cookie: process.env.YOUTUBE_COOKIE || FALLBACK_COOKIE,
     generate_session_locally: true
   });
 }
@@ -73,7 +72,7 @@ export default async function handler(req, res) {
         const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
         if (format) {
           debugStep = 'android_decipher';
-          directStreamUrl = await format.decipher(yt.session.player);
+          directStreamUrl = format.url || (format.signature_cipher ? await format.decipher(yt.session.player) : null);
         }
       } catch (err) {
         innerError = `ANDROID failed at ${debugStep}: ${err.message}`;
@@ -87,7 +86,7 @@ export default async function handler(req, res) {
           const format = info.chooseFormat({ type: 'video+audio', quality: 'best' });
           if (format) {
             debugStep = 'vr_decipher';
-            directStreamUrl = await format.decipher(yt.session.player);
+            directStreamUrl = format.url || (format.signature_cipher ? await format.decipher(yt.session.player) : null);
           }
         } catch (vrErr) {
           innerError += ` | VR failed at ${debugStep}: ${vrErr.message}`;
@@ -95,9 +94,12 @@ export default async function handler(req, res) {
         }
       }
 
-      const isAudio = type === 'mp3' || type === 'audio' || type === '128k';
+      const isAudio = type === 'mp3' || type === 'audio' || type === '128k' || type === '320k';
       const videoTitle = info?.basic_info?.title || extractedYtId;
-      const cleanFilename = (filename && filename !== 'QuickVero_Media' ? filename : videoTitle).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const rawName = (filename && filename !== 'QuickVero_Media' ? filename : videoTitle)
+        .replace(/\.(mp4|mp3|m4a|webm|mov)$/i, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanFilename = rawName || 'QuickVero_Media';
       const safeExt = isAudio ? 'm4a' : 'mp4';
       const contentType = isAudio ? 'audio/mp4' : 'video/mp4';
 
@@ -128,6 +130,13 @@ export default async function handler(req, res) {
 
           debugStep = 'piping_body';
           const nodeStream = Readable.fromWeb(upstreamRes.body);
+          nodeStream.on('error', (err) => {
+            console.error('Upstream nodeStream error:', err);
+            if (!res.headersSent) res.status(500).end();
+          });
+          req.on('close', () => {
+            nodeStream.destroy();
+          });
           return nodeStream.pipe(res);
         } else {
           innerError = (innerError ? innerError + ' | ' : '') + `Direct fetch returned ${upstreamRes.status}: ${upstreamRes.statusText}`;
@@ -146,6 +155,13 @@ export default async function handler(req, res) {
         res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}.${safeExt}"`);
 
         const nodeStream = Readable.from(stream);
+        nodeStream.on('error', (err) => {
+          console.error('yt.download nodeStream error:', err);
+          if (!res.headersSent) res.status(500).end();
+        });
+        req.on('close', () => {
+          nodeStream.destroy();
+        });
         return nodeStream.pipe(res);
       }
     }
@@ -183,9 +199,12 @@ export default async function handler(req, res) {
       });
     }
 
-    const cleanFilename = filename.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const rawClean = (filename || 'QuickVero_Media')
+      .replace(/\.(mp4|mp3|m4a|webm|mov)$/i, '')
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+    const cleanFilename = rawClean || 'QuickVero_Media';
     // Ensure accurate file extension matching actual container
-    const isAudioOnly = type === 'mp3' || type === 'audio';
+    const isAudioOnly = type === 'mp3' || type === 'audio' || type === '128k' || type === '320k';
     const safeExt = isAudioOnly && (upstreamContentType.includes('audio') || upstreamContentType.includes('mpeg')) ? 'mp3' : 'mp4';
     const contentType = upstreamContentType || (safeExt === 'mp3' ? 'audio/mpeg' : 'video/mp4');
 

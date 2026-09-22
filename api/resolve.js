@@ -5,13 +5,12 @@ import { Innertube, Platform } from 'youtubei.js';
 // Initialize platform shim for YouTube cipher eval
 Platform.shim.eval = async (data) => new Function(data.output)();
 
-const FALLBACK_VISITOR_DATA = 'Cgt1Nk5INXZ4SWNuayibv8bVBjIKCgJJThIEGgAgJWLfAgrcAjIxLllUPWNua3A5dDVOb0EwTE12TTNRNndxRm43MmJtUmhFYW1JcFNpSDJZY1BFU3JOX3BwTnNubExBaGRqMkdET3h4bjBuWFJrNEcza0FxVHF2QTA1Y0czNUUtTlcxN1N5b3NSWEFoOFllTDhTR0NoWl94VEppcFliMDJNSWs2ZnV0N3JIelYyYjFhbTNKUGRYYWFJd3gwZHhpeDBPNFVCNGJCMWh5MlV6RTJEd0dMQVYxNEtvYWNrN0h2UFA4YnlvbkYyMzJ2a1NHNGJ4RWZMX2ZGeWEzaDBjQ3dqRWdUeXJuRFFvNzUtcTlSNC02T002YjVMOE5LaENIV2xNQVgwQTlnWEhtRVowRjJEZzMyTEJ3bWdocU9IR3hHTGlmQTQzZzd3Y2htQlFTWEQ2Z2dYSkE2OWhTVW1FdHpPczRQWnVFSVF4SG51ZHltOFAzTEtJaEd3YmVlODdCUQ%3D%3D';
+const FALLBACK_COOKIE = '__Secure-3PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; APISID=pqNwouGLTy8GIMFx/AfiK4p3DhyBEJym29; SAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; __Secure-1PAPISID=NRAApVeYSt_lt9uD/AGBsMBcEY8WvMK7Vy; _ga=GA1.1.201074170.1774367578; _ga_5JSYX2Q357=GS2.1.s1774367577$o1$g1$t1774367783$j36$l0$h0; SID=g.a000CAno0BvCwTMOPhSjW8KVEDi_nGo27vgzVw9GmTpnXcnCmm6aQgN_w7gTxIQfxei2urDHCwACgYKAa0SARISFQHGX2MiDJiWLjAPrSmJjDR_g3pNKBoVAUF8yKopLb7aW3ObFY_ogDgJTl940076; PREF=f4=4000000&f6=40000000&tz=Asia.Calcutta&f7=100&repeat=NONE&autoplay=true&volume=100&f5=20000; SIDCC=AKEyXzU_Qnj8z04AqiB-oaCGDrK15pypn8CDcSo1pL5cCR9BR2rpR6RChxVEk8dVX9sNsD5-s7dK';
 
 async function getYT(clientType = 'ANDROID') {
   return await Innertube.create({
     client_type: clientType,
-    visitor_data: process.env.YOUTUBE_VISITOR_DATA || FALLBACK_VISITOR_DATA,
-    cookie: process.env.YOUTUBE_COOKIE || undefined,
+    cookie: process.env.YOUTUBE_COOKIE || FALLBACK_COOKIE,
     generate_session_locally: true
   });
 }

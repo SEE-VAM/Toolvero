@@ -138,19 +138,10 @@ export const VideoDownloaderWorkspace: React.FC<VideoDownloaderWorkspaceProps> =
         message: `Your ${qualityLabel} video has started downloading!`,
       });
     } catch (err: any) {
-      if (videoInfo.platform === 'youtube' && videoInfo.videoId) {
-        onShowToast({
-          type: 'info',
-          message: 'Connecting to fast download mirror...',
-        });
-        window.open(`https://www.ssyoutube.com/watch?v=${videoInfo.videoId}`, '_blank');
-      } else {
-        onShowToast({
-          type: 'error',
-          message: 'Opening video stream link...',
-        });
-        window.open(streamUrl, '_blank');
-      }
+      onShowToast({
+        type: 'error',
+        message: err.message || 'Unable to download video stream right now. Please try again.',
+      });
     } finally {
       setDownloadingFormat(null);
       setDownloadProgress(0);

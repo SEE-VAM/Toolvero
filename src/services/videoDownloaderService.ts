@@ -353,7 +353,8 @@ export class VideoDownloaderService {
    */
   async downloadVideoFile(streamUrl: string, filename: string, onProgress?: (percent: number) => void): Promise<void> {
     onProgress?.(20);
-    const cleanFilename = sanitizeFilename(filename, 'mp4');
+    const baseName = filename.replace(/\.(mp4|mp3|m4a|webm|mov)$/i, '').replace(/[/\\?%*:|"<>]/g, '_').trim();
+    const cleanFilename = baseName || 'QuickVero_Video';
 
     // Build direct stream URL
     let targetDownloadUrl = '';
@@ -375,7 +376,7 @@ export class VideoDownloaderService {
     try {
       const checkRes = await fetch(targetDownloadUrl, {
         headers: { 'Range': 'bytes=0-100' },
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(10000),
       });
       const ctype = checkRes.headers.get('content-type') || '';
       if (!checkRes.ok && checkRes.status !== 206) {
@@ -396,10 +397,9 @@ export class VideoDownloaderService {
       }
     } catch (checkErr: any) {
       if (checkErr.name === 'AbortError' || checkErr.name === 'TimeoutError') {
-        // If slow network timeout, proceed to trigger native download
-      } else {
-        throw checkErr;
+        throw new Error('Connection timed out while preparing your download. Please try again.');
       }
+      throw checkErr;
     }
 
     onProgress?.(80);
