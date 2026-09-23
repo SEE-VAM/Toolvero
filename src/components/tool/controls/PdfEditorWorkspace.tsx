@@ -1382,8 +1382,10 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   style={{
                     left: `${item.xPercent}%`,
                     top: `${item.yPercent}%`,
-                    width: `${Math.max(item.widthPercent, 4)}%`,
-                    height: `${item.heightPercent}%`,
+                    minWidth: `${Math.max(item.widthPercent, 3)}%`,
+                    width: isEditing || isEdited ? 'max-content' : `${Math.max(item.widthPercent, 3)}%`,
+                    maxWidth: '96%',
+                    minHeight: `${item.heightPercent}%`,
                     fontFamily: item.fontFamily,
                     fontSize: `${item.fontSize}px`,
                     fontWeight: item.isBold ? 'bold' : 'normal',
@@ -1391,9 +1393,9 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   }}
                   className={`absolute z-15 transition-all ${
                     isEditing
-                      ? 'ring-2 ring-brand-500 bg-white shadow-md z-30'
+                      ? 'ring-2 ring-brand-500 bg-white shadow-lg z-30 rounded-xs'
                       : isEdited
-                      ? 'bg-amber-100/90 text-slate-900 border border-amber-300'
+                      ? 'bg-white text-slate-900 border-2 border-amber-400 rounded-xs shadow-xs z-20'
                       : 'hover:bg-brand-500/15 hover:ring-1 hover:ring-brand-400 cursor-text'
                   }`}
                   onClick={(e) => {
@@ -1408,6 +1410,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                       type="text"
                       autoFocus
                       value={displayText}
+                      size={Math.max(displayText.length + 1, 6)}
                       onChange={(e) => handleTextChange(item.id, e.target.value)}
                       onBlur={() => setActiveItemId(null)}
                       onKeyDown={(e) => {
@@ -1420,11 +1423,13 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                         fontSize: `${item.fontSize}px`,
                         fontWeight: item.isBold ? 'bold' : 'normal',
                         fontStyle: item.isItalic ? 'italic' : 'normal',
+                        minWidth: '100%',
+                        width: `${Math.max(displayText.length + 1, 6)}ch`,
                       }}
-                      className="w-full h-full bg-white text-black px-0.5 outline-none border-none leading-none"
+                      className="bg-white text-black px-1.5 py-0.5 outline-none border-none leading-normal block"
                     />
                   ) : isEdited ? (
-                    <span className="w-full h-full block bg-white text-black leading-none whitespace-nowrap overflow-hidden">
+                    <span className="block bg-white text-black px-1.5 py-0.5 leading-normal whitespace-nowrap overflow-visible">
                       {displayText}
                     </span>
                   ) : null}
@@ -1445,13 +1450,16 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   fontSize: `${box.fontSize}px`,
                   fontWeight: box.isBold ? 'bold' : 'normal',
                   fontStyle: box.isItalic ? 'italic' : 'normal',
+                  width: 'max-content',
+                  maxWidth: '92%',
                 }}
-                className="absolute z-20 group border border-dashed border-brand-400 bg-white/90 p-1 rounded min-w-[60px] cursor-move"
+                className="absolute z-20 group border border-dashed border-brand-400 bg-white/95 px-1.5 py-1 rounded min-w-[60px] cursor-move shadow-xs"
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
                   type="text"
                   value={box.text}
+                  size={Math.max(box.text.length + 1, 6)}
                   onChange={(e) => {
                     const newTxt = e.target.value;
                     updatePageEdits((page) => ({
@@ -1467,8 +1475,10 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     fontSize: `${box.fontSize}px`,
                     fontWeight: box.isBold ? 'bold' : 'normal',
                     fontStyle: box.isItalic ? 'italic' : 'normal',
+                    width: `${Math.max(box.text.length + 1, 6)}ch`,
+                    minWidth: '60px',
                   }}
-                  className="bg-transparent outline-none border-none w-full"
+                  className="bg-transparent outline-none border-none leading-normal block"
                 />
                 <button
                   type="button"

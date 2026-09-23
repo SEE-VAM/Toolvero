@@ -578,8 +578,8 @@ export async function loadPdfPageForEditing(
     // Viewport coordinates
     const [vx, vy] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
     const fontHeight = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]) * scale;
-    const itemWidth = Math.max(item.width * scale, 12);
-    const itemHeight = Math.max(fontHeight * 1.15, 12);
+    const itemWidth = Math.max(item.width * scale * 1.05 + 6, 16);
+    const itemHeight = Math.max(fontHeight * 1.25, 16);
     const itemTop = Math.max(0, vy - fontHeight);
 
     const xPercent = (vx / viewport.width) * 100;
@@ -694,16 +694,24 @@ export async function exportEditedPdf(
           const iw = (item.widthPercent / 100) * canvas.width;
           const ih = (item.heightPercent / 100) * canvas.height;
 
-          // Whiteout old text area
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(ix - 2, iy - 2, Math.max(iw, ctx.measureText(newText).width) + 8, ih + 4);
-
           // Render replacement text in exact matching font
           const scaledFontSize = Math.round(item.fontSize * (scale / 1.5));
           ctx.font = `${item.isBold ? 'bold ' : ''}${item.isItalic ? 'italic ' : ''}${scaledFontSize}px ${item.fontFamily}`;
-          ctx.fillStyle = item.textColor || '#000000';
-          ctx.textBaseline = 'top';
-          ctx.fillText(newText, ix, iy + scaledFontSize * 0.1);
+
+          // Accurately measure new text width with font set
+          const measuredWidth = ctx.measureText(newText).width;
+          const fillWidth = Math.max(iw, measuredWidth) + 12;
+          const fillHeight = Math.max(ih, scaledFontSize * 1.3) + 4;
+
+          // Whiteout old text area
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(ix - 3, iy - 2, fillWidth, fillHeight);
+
+          if (newText.trim()) {
+            ctx.fillStyle = item.textColor || '#000000';
+            ctx.textBaseline = 'top';
+            ctx.fillText(newText, ix, iy + scaledFontSize * 0.05);
+          }
         }
       }
 
@@ -915,15 +923,23 @@ export async function exportPageAsImage(
           const iw = (item.widthPercent / 100) * canvas.width;
           const ih = (item.heightPercent / 100) * canvas.height;
 
+          // Render replacement text in exact matching font
+          const scaledFontSize = Math.round(item.fontSize * (scale / 1.5));
+          ctx.font = `${item.isBold ? 'bold ' : ''}${item.isItalic ? 'italic ' : ''}${scaledFontSize}px ${item.fontFamily}`;
+
+          // Accurately measure new text width with font set
+          const measuredWidth = ctx.measureText(replacement).width;
+          const fillWidth = Math.max(iw, measuredWidth) + 12;
+          const fillHeight = Math.max(ih, scaledFontSize * 1.3) + 4;
+
+          // Whiteout old text area
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(ix, iy, iw, ih);
+          ctx.fillRect(ix - 3, iy - 2, fillWidth, fillHeight);
 
           if (replacement.trim()) {
-            const scaledFontSize = Math.round(item.fontSize * (scale / 1.5));
-            ctx.font = `${item.isBold ? 'bold ' : ''}${item.isItalic ? 'italic ' : ''}${scaledFontSize}px ${item.fontFamily}`;
             ctx.fillStyle = item.textColor || '#000000';
             ctx.textBaseline = 'top';
-            ctx.fillText(replacement, ix, iy);
+            ctx.fillText(replacement, ix, iy + scaledFontSize * 0.05);
           }
         }
       }
