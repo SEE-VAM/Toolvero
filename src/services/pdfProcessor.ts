@@ -451,10 +451,54 @@ export interface WhiteoutBox {
   heightPercent: number;
 }
 
+export interface PlacableImage {
+  id: string;
+  dataUrl: string;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+}
+
+export interface PlacableShape {
+  id: string;
+  type: 'rectangle' | 'circle' | 'line' | 'highlight';
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+  color: string;
+  opacity: number;
+  strokeWidth: number;
+}
+
+export interface PlacableStamp {
+  id: string;
+  text: string;
+  color: string;
+  xPercent: number;
+  yPercent: number;
+}
+
 export interface PageEdits {
   editedItems: Record<string, string>; // item id -> replacement text
   customBoxes: CustomTextBox[];
   whiteouts: WhiteoutBox[];
+  signatures: PlacableImage[];
+  images: PlacableImage[];
+  shapes: PlacableShape[];
+  stamps: PlacableStamp[];
+  rotation?: number; // 0, 90, 180, 270
+}
+
+export function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(new Error('Failed to load image from data URL'));
+    img.src = dataUrl;
+  });
 }
 
 export function normalizeFontFamily(rawFontName: string, rawFamily?: string): 'sans-serif' | 'serif' | 'monospace' {
@@ -486,7 +530,8 @@ export function normalizeFontFamily(rawFontName: string, rawFamily?: string): 's
 export async function loadPdfPageForEditing(
   file: File,
   pageNumber: number,
-  scale: number = 1.5
+  scale: number = 1.5,
+  rotation: number = 0
 ): Promise<{
   canvasDataUrl: string;
   width: number;
@@ -504,7 +549,8 @@ export async function loadPdfPageForEditing(
   const targetPageNum = Math.min(Math.max(1, pageNumber), numPages);
   const page = await pdfDoc.getPage(targetPageNum);
 
-  const viewport = page.getViewport({ scale });
+  const totalRotation = ((page.rotate || 0) + (rotation || 0)) % 360;
+  const viewport = page.getViewport({ scale, rotation: totalRotation });
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(viewport.width);
   canvas.height = Math.round(viewport.height);
@@ -578,6 +624,7 @@ export async function exportEditedPdf(
   file: File,
   allPageEdits: Record<number, PageEdits>,
   pageItemsMap: Record<number, DetectedTextItem[]>,
+  deletedPages: Set<number> = new Set(),
   onProgress?: (percent: number) => void
 ): Promise<ProcessResult> {
   onProgress?.(10);
@@ -590,11 +637,22 @@ export async function exportEditedPdf(
   const numPages = pdfDoc.numPages;
 
   const newPdf = await PDFDocument.create();
+  let exportedPagesCount = 0;
 
   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    // Skip deleted pages
+    if (deletedPages.has(pageNum)) {
+      continue;
+    }
+
+    exportedPagesCount++;
     const page = await pdfDoc.getPage(pageNum);
+    const pageEdits = allPageEdits[pageNum];
+    const rot = ((pageEdits?.rotation || 0) % 360);
+    const totalRot = ((page.rotate || 0) + rot) % 360;
+
     const scale = 2.0; // High resolution export for crisp print
-    const viewport = page.getViewport({ scale });
+    const viewport = page.getViewport({ scale, rotation: totalRot });
 
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(viewport.width);
@@ -610,7 +668,6 @@ export async function exportEditedPdf(
       viewport,
     }).promise;
 
-    const pageEdits = allPageEdits[pageNum];
     const items = pageItemsMap[pageNum] || [];
 
     if (pageEdits) {
@@ -650,7 +707,77 @@ export async function exportEditedPdf(
         }
       }
 
-      // 3. Apply Added Custom Text Boxes
+      // 3. Apply Highlighters & Shapes
+      if (pageEdits.shapes && pageEdits.shapes.length > 0) {
+        for (const shape of pageEdits.shapes) {
+          const sx = (shape.xPercent / 100) * canvas.width;
+          const sy = (shape.yPercent / 100) * canvas.height;
+          const sw = (shape.widthPercent / 100) * canvas.width;
+          const sh = (shape.heightPercent / 100) * canvas.height;
+
+          ctx.save();
+          if (shape.type === 'highlight') {
+            ctx.globalAlpha = 0.45;
+            ctx.fillStyle = shape.color || '#fef08a';
+            ctx.fillRect(sx, sy, sw, sh);
+          } else if (shape.type === 'rectangle') {
+            ctx.globalAlpha = shape.opacity || 1.0;
+            ctx.strokeStyle = shape.color || '#000000';
+            ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+            ctx.strokeRect(sx, sy, sw, sh);
+          } else if (shape.type === 'circle') {
+            ctx.globalAlpha = shape.opacity || 1.0;
+            ctx.strokeStyle = shape.color || '#000000';
+            ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+            ctx.beginPath();
+            ctx.ellipse(sx + sw / 2, sy + sh / 2, sw / 2, sh / 2, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (shape.type === 'line') {
+            ctx.globalAlpha = shape.opacity || 1.0;
+            ctx.strokeStyle = shape.color || '#000000';
+            ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + sw, sy + sh);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
+
+      // 4. Apply Images & Logos
+      if (pageEdits.images && pageEdits.images.length > 0) {
+        for (const imgItem of pageEdits.images) {
+          try {
+            const img = await loadImageFromDataUrl(imgItem.dataUrl);
+            const imX = (imgItem.xPercent / 100) * canvas.width;
+            const imY = (imgItem.yPercent / 100) * canvas.height;
+            const imW = (imgItem.widthPercent / 100) * canvas.width;
+            const imH = (imgItem.heightPercent / 100) * canvas.height;
+            ctx.drawImage(img, imX, imY, imW, imH);
+          } catch (e) {
+            console.warn('Failed to draw image item:', e);
+          }
+        }
+      }
+
+      // 5. Apply Signatures
+      if (pageEdits.signatures && pageEdits.signatures.length > 0) {
+        for (const sig of pageEdits.signatures) {
+          try {
+            const sigImg = await loadImageFromDataUrl(sig.dataUrl);
+            const sigX = (sig.xPercent / 100) * canvas.width;
+            const sigY = (sig.yPercent / 100) * canvas.height;
+            const sigW = (sig.widthPercent / 100) * canvas.width;
+            const sigH = (sig.heightPercent / 100) * canvas.height;
+            ctx.drawImage(sigImg, sigX, sigY, sigW, sigH);
+          } catch (e) {
+            console.warn('Failed to draw signature:', e);
+          }
+        }
+      }
+
+      // 6. Apply Added Custom Text Boxes
       if (pageEdits.customBoxes && pageEdits.customBoxes.length > 0) {
         for (const box of pageEdits.customBoxes) {
           const bx = (box.xPercent / 100) * canvas.width;
@@ -662,13 +789,37 @@ export async function exportEditedPdf(
           ctx.fillText(box.text, bx, by);
         }
       }
+
+      // 7. Apply Status Stamps
+      if (pageEdits.stamps && pageEdits.stamps.length > 0) {
+        for (const stamp of pageEdits.stamps) {
+          const stX = (stamp.xPercent / 100) * canvas.width;
+          const stY = (stamp.yPercent / 100) * canvas.height;
+          const stampW = 150 * (scale / 1.5);
+          const stampH = 46 * (scale / 1.5);
+
+          ctx.save();
+          ctx.translate(stX, stY);
+          ctx.rotate(-0.12);
+          ctx.strokeStyle = stamp.color;
+          ctx.lineWidth = 3.5 * (scale / 1.5);
+          ctx.strokeRect(0, 0, stampW, stampH);
+
+          ctx.fillStyle = stamp.color;
+          ctx.font = `bold ${20 * (scale / 1.5)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(stamp.text, stampW / 2, stampH / 2);
+          ctx.restore();
+        }
+      }
     }
 
     // Embed synthesized page into new PDF
     const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.94);
     const embeddedImg = await newPdf.embedJpg(jpgDataUrl);
 
-    const origViewport = page.getViewport({ scale: 1.0 });
+    const origViewport = page.getViewport({ scale: 1.0, rotation: totalRot });
     const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
     newPage.drawImage(embeddedImg, {
       x: 0,
@@ -698,7 +849,199 @@ export async function exportEditedPdf(
     processedSize: finalBlob.size,
     savingsPercentage: 0,
     metadata: {
-      pages: numPages,
+      pages: exportedPagesCount,
     },
   };
+}
+
+/**
+ * Export a single composite page with all edits, whiteouts, and Canva elements as a high-res JPG or PNG
+ */
+export async function exportPageAsImage(
+  file: File,
+  pageNum: number,
+  pageEdits: PageEdits | undefined,
+  textItems: DetectedTextItem[],
+  format: 'jpeg' | 'png' = 'png'
+): Promise<{ dataUrl: string; filename: string }> {
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    cMapPacked: true,
+  });
+  const pdfDoc = await loadingTask.promise;
+  const targetPageNum = Math.min(Math.max(1, pageNum), pdfDoc.numPages);
+  const page = await pdfDoc.getPage(targetPageNum);
+
+  const rot = ((pageEdits?.rotation || 0) % 360);
+  const totalRot = ((page.rotate || 0) + rot) % 360;
+  const scale = 2.0;
+  const viewport = page.getViewport({ scale, rotation: totalRot });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context not available');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  await page.render({
+    canvasContext: ctx,
+    viewport,
+  }).promise;
+
+  if (pageEdits) {
+    // 1. Whiteout boxes
+    if (pageEdits.whiteouts && pageEdits.whiteouts.length > 0) {
+      ctx.fillStyle = '#ffffff';
+      for (const w of pageEdits.whiteouts) {
+        const wx = (w.xPercent / 100) * canvas.width;
+        const wy = (w.yPercent / 100) * canvas.height;
+        const ww = (w.widthPercent / 100) * canvas.width;
+        const wh = (w.heightPercent / 100) * canvas.height;
+        ctx.fillRect(wx, wy, ww, wh);
+      }
+    }
+
+    // 2. Text replacements in matching font
+    if (pageEdits.editedItems && textItems && textItems.length > 0) {
+      for (const item of textItems) {
+        const replacement = pageEdits.editedItems[item.id];
+        if (replacement !== undefined && replacement !== item.originalText) {
+          const ix = (item.xPercent / 100) * canvas.width;
+          const iy = (item.yPercent / 100) * canvas.height;
+          const iw = (item.widthPercent / 100) * canvas.width;
+          const ih = (item.heightPercent / 100) * canvas.height;
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(ix, iy, iw, ih);
+
+          if (replacement.trim()) {
+            const scaledFontSize = Math.round(item.fontSize * (scale / 1.5));
+            ctx.font = `${item.isBold ? 'bold ' : ''}${item.isItalic ? 'italic ' : ''}${scaledFontSize}px ${item.fontFamily}`;
+            ctx.fillStyle = item.textColor || '#000000';
+            ctx.textBaseline = 'top';
+            ctx.fillText(replacement, ix, iy);
+          }
+        }
+      }
+    }
+
+    // 3. Highlighters & Shapes
+    if (pageEdits.shapes && pageEdits.shapes.length > 0) {
+      for (const shape of pageEdits.shapes) {
+        const sx = (shape.xPercent / 100) * canvas.width;
+        const sy = (shape.yPercent / 100) * canvas.height;
+        const sw = (shape.widthPercent / 100) * canvas.width;
+        const sh = (shape.heightPercent / 100) * canvas.height;
+
+        ctx.save();
+        if (shape.type === 'highlight') {
+          ctx.globalAlpha = 0.45;
+          ctx.fillStyle = shape.color || '#fef08a';
+          ctx.fillRect(sx, sy, sw, sh);
+        } else if (shape.type === 'rectangle') {
+          ctx.globalAlpha = shape.opacity || 1.0;
+          ctx.strokeStyle = shape.color || '#000000';
+          ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+          ctx.strokeRect(sx, sy, sw, sh);
+        } else if (shape.type === 'circle') {
+          ctx.globalAlpha = shape.opacity || 1.0;
+          ctx.strokeStyle = shape.color || '#000000';
+          ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+          ctx.beginPath();
+          ctx.ellipse(sx + sw / 2, sy + sh / 2, sw / 2, sh / 2, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (shape.type === 'line') {
+          ctx.globalAlpha = shape.opacity || 1.0;
+          ctx.strokeStyle = shape.color || '#000000';
+          ctx.lineWidth = (shape.strokeWidth || 2) * (scale / 1.5);
+          ctx.beginPath();
+          ctx.moveTo(sx, sy);
+          ctx.lineTo(sx + sw, sy + sh);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    // 4. Images & Logos
+    if (pageEdits.images && pageEdits.images.length > 0) {
+      for (const imgItem of pageEdits.images) {
+        try {
+          const img = await loadImageFromDataUrl(imgItem.dataUrl);
+          const imX = (imgItem.xPercent / 100) * canvas.width;
+          const imY = (imgItem.yPercent / 100) * canvas.height;
+          const imW = (imgItem.widthPercent / 100) * canvas.width;
+          const imH = (imgItem.heightPercent / 100) * canvas.height;
+          ctx.drawImage(img, imX, imY, imW, imH);
+        } catch (e) {
+          console.warn('Failed to draw image item:', e);
+        }
+      }
+    }
+
+    // 5. Signatures
+    if (pageEdits.signatures && pageEdits.signatures.length > 0) {
+      for (const sig of pageEdits.signatures) {
+        try {
+          const sigImg = await loadImageFromDataUrl(sig.dataUrl);
+          const sigX = (sig.xPercent / 100) * canvas.width;
+          const sigY = (sig.yPercent / 100) * canvas.height;
+          const sigW = (sig.widthPercent / 100) * canvas.width;
+          const sigH = (sig.heightPercent / 100) * canvas.height;
+          ctx.drawImage(sigImg, sigX, sigY, sigW, sigH);
+        } catch (e) {
+          console.warn('Failed to draw signature:', e);
+        }
+      }
+    }
+
+    // 6. Custom Text Boxes
+    if (pageEdits.customBoxes && pageEdits.customBoxes.length > 0) {
+      for (const box of pageEdits.customBoxes) {
+        const bx = (box.xPercent / 100) * canvas.width;
+        const by = (box.yPercent / 100) * canvas.height;
+        const scaledFontSize = Math.round(box.fontSize * (scale / 1.5));
+        ctx.font = `${box.isBold ? 'bold ' : ''}${box.isItalic ? 'italic ' : ''}${scaledFontSize}px ${box.fontFamily}`;
+        ctx.fillStyle = box.color || '#000000';
+        ctx.textBaseline = 'top';
+        ctx.fillText(box.text, bx, by);
+      }
+    }
+
+    // 7. Status Stamps
+    if (pageEdits.stamps && pageEdits.stamps.length > 0) {
+      for (const stamp of pageEdits.stamps) {
+        const stX = (stamp.xPercent / 100) * canvas.width;
+        const stY = (stamp.yPercent / 100) * canvas.height;
+        const stampW = 150 * (scale / 1.5);
+        const stampH = 46 * (scale / 1.5);
+
+        ctx.save();
+        ctx.translate(stX, stY);
+        ctx.rotate(-0.12);
+        ctx.strokeStyle = stamp.color;
+        ctx.lineWidth = 3.5 * (scale / 1.5);
+        ctx.strokeRect(0, 0, stampW, stampH);
+
+        ctx.fillStyle = stamp.color;
+        ctx.font = `bold ${20 * (scale / 1.5)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(stamp.text, stampW / 2, stampH / 2);
+        ctx.restore();
+      }
+    }
+  }
+
+  const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+  const ext = format === 'jpeg' ? 'jpg' : 'png';
+  const dataUrl = canvas.toDataURL(mime, 0.95);
+  const base = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+  const filename = sanitizeFilename(`${base}_page_${targetPageNum}.${ext}`);
+
+  return { dataUrl, filename };
 }
