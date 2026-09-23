@@ -60,6 +60,18 @@ interface DraggingState {
   startMouseY: number;
 }
 
+interface ResizingState {
+  type: 'image' | 'signature' | 'shape' | 'whiteout';
+  id: string;
+  handle: 'se' | 'sw' | 'ne' | 'nw';
+  startXPercent: number;
+  startYPercent: number;
+  startWidthPercent: number;
+  startHeightPercent: number;
+  startMouseX: number;
+  startMouseY: number;
+}
+
 export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowToast }) => {
   const [file, setFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,8 +101,9 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
 
-  // Dragging state for placable elements
+  // Dragging and Resizing state for placable elements
   const [draggingItem, setDraggingItem] = useState<DraggingState | null>(null);
+  const [resizingItem, setResizingItem] = useState<ResizingState | null>(null);
 
   // Signature Modal state
   const [isSigModalOpen, setIsSigModalOpen] = useState(false);
@@ -222,7 +235,8 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
     }));
   };
 
-  // --- Dragging Handlers ---
+
+  // --- Dragging & Resizing Handlers ---
   const handleMouseDown = (
     e: React.MouseEvent,
     type: DraggingState['type'],
@@ -241,69 +255,186 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
     });
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!draggingItem || !documentContainerRef.current) return;
-    const rect = documentContainerRef.current.getBoundingClientRect();
-    const deltaXPercent = ((e.clientX - draggingItem.startMouseX) / rect.width) * 100;
-    const deltaYPercent = ((e.clientY - draggingItem.startMouseY) / rect.height) * 100;
-
-    const newX = Math.max(0, Math.min(96, draggingItem.startXPercent + deltaXPercent));
-    const newY = Math.max(0, Math.min(96, draggingItem.startYPercent + deltaYPercent));
-
-    updatePageEdits((page) => {
-      if (draggingItem.type === 'customText') {
-        return {
-          ...page,
-          customBoxes: page.customBoxes.map((b) =>
-            b.id === draggingItem.id ? { ...b, xPercent: newX, yPercent: newY } : b
-          ),
-        };
-      }
-      if (draggingItem.type === 'whiteout') {
-        return {
-          ...page,
-          whiteouts: page.whiteouts.map((w) =>
-            w.id === draggingItem.id ? { ...w, xPercent: newX, yPercent: newY } : w
-          ),
-        };
-      }
-      if (draggingItem.type === 'image') {
-        return {
-          ...page,
-          images: page.images.map((img) =>
-            img.id === draggingItem.id ? { ...img, xPercent: newX, yPercent: newY } : img
-          ),
-        };
-      }
-      if (draggingItem.type === 'signature') {
-        return {
-          ...page,
-          signatures: page.signatures.map((sig) =>
-            sig.id === draggingItem.id ? { ...sig, xPercent: newX, yPercent: newY } : sig
-          ),
-        };
-      }
-      if (draggingItem.type === 'shape') {
-        return {
-          ...page,
-          shapes: page.shapes.map((sh) =>
-            sh.id === draggingItem.id ? { ...sh, xPercent: newX, yPercent: newY } : sh
-          ),
-        };
-      }
-      if (draggingItem.type === 'stamp') {
-        return {
-          ...page,
-          stamps: page.stamps.map((st) =>
-            st.id === draggingItem.id ? { ...st, xPercent: newX, yPercent: newY } : st
-          ),
-        };
-      }
-      return page;
+  const handleResizeMouseDown = (
+    e: React.MouseEvent,
+    type: ResizingState['type'],
+    id: string,
+    handle: 'se' | 'sw' | 'ne' | 'nw',
+    currentX: number,
+    currentY: number,
+    currentW: number,
+    currentH: number
+  ) => {
+    e.stopPropagation();
+    setResizingItem({
+      type,
+      id,
+      handle,
+      startXPercent: currentX,
+      startYPercent: currentY,
+      startWidthPercent: currentW,
+      startHeightPercent: currentH,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
     });
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!documentContainerRef.current) return;
+    const rect = documentContainerRef.current.getBoundingClientRect();
+
+    // 1. Handle Resizing
+    if (resizingItem) {
+      const deltaXPercent = ((e.clientX - resizingItem.startMouseX) / rect.width) * 100;
+      const deltaYPercent = ((e.clientY - resizingItem.startMouseY) / rect.height) * 100;
+
+      let newW = resizingItem.startWidthPercent;
+      let newH = resizingItem.startHeightPercent;
+      let newX = resizingItem.startXPercent;
+      let newY = resizingItem.startYPercent;
+
+      if (resizingItem.handle === 'se') {
+        newW = Math.max(3, Math.min(100 - resizingItem.startXPercent, resizingItem.startWidthPercent + deltaXPercent));
+        newH = Math.max(2, Math.min(100 - resizingItem.startYPercent, resizingItem.startHeightPercent + deltaYPercent));
+      } else if (resizingItem.handle === 'sw') {
+        const candidateW = resizingItem.startWidthPercent - deltaXPercent;
+        if (candidateW >= 3 && resizingItem.startXPercent + deltaXPercent >= 0) {
+          newX = resizingItem.startXPercent + deltaXPercent;
+          newW = candidateW;
+        }
+        newH = Math.max(2, Math.min(100 - resizingItem.startYPercent, resizingItem.startHeightPercent + deltaYPercent));
+      } else if (resizingItem.handle === 'ne') {
+        newW = Math.max(3, Math.min(100 - resizingItem.startXPercent, resizingItem.startWidthPercent + deltaXPercent));
+        const candidateH = resizingItem.startHeightPercent - deltaYPercent;
+        if (candidateH >= 2 && resizingItem.startYPercent + deltaYPercent >= 0) {
+          newY = resizingItem.startYPercent + deltaYPercent;
+          newH = candidateH;
+        }
+      } else if (resizingItem.handle === 'nw') {
+        const candidateW = resizingItem.startWidthPercent - deltaXPercent;
+        if (candidateW >= 3 && resizingItem.startXPercent + deltaXPercent >= 0) {
+          newX = resizingItem.startXPercent + deltaXPercent;
+          newW = candidateW;
+        }
+        const candidateH = resizingItem.startHeightPercent - deltaYPercent;
+        if (candidateH >= 2 && resizingItem.startYPercent + deltaYPercent >= 0) {
+          newY = resizingItem.startYPercent + deltaYPercent;
+          newH = candidateH;
+        }
+      }
+
+      updatePageEdits((page) => {
+        if (resizingItem.type === 'image') {
+          return {
+            ...page,
+            images: page.images.map((img) =>
+              img.id === resizingItem.id
+                ? { ...img, xPercent: newX, yPercent: newY, widthPercent: newW, heightPercent: newH }
+                : img
+            ),
+          };
+        }
+        if (resizingItem.type === 'signature') {
+          return {
+            ...page,
+            signatures: page.signatures.map((sig) =>
+              sig.id === resizingItem.id
+                ? { ...sig, xPercent: newX, yPercent: newY, widthPercent: newW, heightPercent: newH }
+                : sig
+            ),
+          };
+        }
+        if (resizingItem.type === 'shape') {
+          return {
+            ...page,
+            shapes: page.shapes.map((sh) =>
+              sh.id === resizingItem.id
+                ? { ...sh, xPercent: newX, yPercent: newY, widthPercent: newW, heightPercent: newH }
+                : sh
+            ),
+          };
+        }
+        if (resizingItem.type === 'whiteout') {
+          return {
+            ...page,
+            whiteouts: page.whiteouts.map((w) =>
+              w.id === resizingItem.id
+                ? { ...w, xPercent: newX, yPercent: newY, widthPercent: newW, heightPercent: newH }
+                : w
+            ),
+          };
+        }
+        return page;
+      });
+      return;
+    }
+
+    // 2. Handle Dragging Position
+    if (draggingItem) {
+      const deltaXPercent = ((e.clientX - draggingItem.startMouseX) / rect.width) * 100;
+      const deltaYPercent = ((e.clientY - draggingItem.startMouseY) / rect.height) * 100;
+
+      const newX = Math.max(0, Math.min(96, draggingItem.startXPercent + deltaXPercent));
+      const newY = Math.max(0, Math.min(96, draggingItem.startYPercent + deltaYPercent));
+
+      updatePageEdits((page) => {
+        if (draggingItem.type === 'customText') {
+          return {
+            ...page,
+            customBoxes: page.customBoxes.map((b) =>
+              b.id === draggingItem.id ? { ...b, xPercent: newX, yPercent: newY } : b
+            ),
+          };
+        }
+        if (draggingItem.type === 'whiteout') {
+          return {
+            ...page,
+            whiteouts: page.whiteouts.map((w) =>
+              w.id === draggingItem.id ? { ...w, xPercent: newX, yPercent: newY } : w
+            ),
+          };
+        }
+        if (draggingItem.type === 'image') {
+          return {
+            ...page,
+            images: page.images.map((img) =>
+              img.id === draggingItem.id ? { ...img, xPercent: newX, yPercent: newY } : img
+            ),
+          };
+        }
+        if (draggingItem.type === 'signature') {
+          return {
+            ...page,
+            signatures: page.signatures.map((sig) =>
+              sig.id === draggingItem.id ? { ...sig, xPercent: newX, yPercent: newY } : sig
+            ),
+          };
+        }
+        if (draggingItem.type === 'shape') {
+          return {
+            ...page,
+            shapes: page.shapes.map((sh) =>
+              sh.id === draggingItem.id ? { ...sh, xPercent: newX, yPercent: newY } : sh
+            ),
+          };
+        }
+        if (draggingItem.type === 'stamp') {
+          return {
+            ...page,
+            stamps: page.stamps.map((st) =>
+              st.id === draggingItem.id ? { ...st, xPercent: newX, yPercent: newY } : st
+            ),
+          };
+        }
+        return page;
+      });
+    }
+  };
+
   const handleMouseUp = () => {
+    if (resizingItem) {
+      setResizingItem(null);
+    }
     if (draggingItem) {
       setDraggingItem(null);
     }
@@ -1366,6 +1497,15 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                 >
                   &times;
                 </button>
+
+                {/* Resize Handle */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'whiteout', w.id, 'se', w.xPercent, w.yPercent, w.widthPercent, w.heightPercent)
+                  }
+                  title="Drag to resize whiteout"
+                  className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-600 rounded-xs shadow-xs cursor-se-resize z-20 hover:scale-125 transition-transform"
+                />
               </div>
             ))}
 
@@ -1508,7 +1648,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   width: `${sh.widthPercent}%`,
                   height: `${sh.heightPercent}%`,
                 }}
-                className="absolute z-18 group cursor-move"
+                className="absolute z-18 group cursor-move select-none"
                 onClick={(e) => e.stopPropagation()}
               >
                 {sh.type === 'highlight' && (
@@ -1550,6 +1690,15 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                 >
                   &times;
                 </button>
+
+                {/* Resize Handle (Bottom-Right) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'shape', sh.id, 'se', sh.xPercent, sh.yPercent, sh.widthPercent, sh.heightPercent)
+                  }
+                  title="Drag to resize shape"
+                  className="opacity-0 group-hover:opacity-100 absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-xs cursor-se-resize z-30 hover:scale-125 transition-transform"
+                />
               </div>
             ))}
 
@@ -1564,14 +1713,16 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   width: `${img.widthPercent}%`,
                   height: `${img.heightPercent}%`,
                 }}
-                className="absolute z-20 group border border-dashed border-blue-400 bg-transparent cursor-move"
+                className="absolute z-20 group border-2 border-dashed border-blue-500 hover:border-blue-600 bg-transparent cursor-move select-none"
                 onClick={(e) => e.stopPropagation()}
               >
                 <img
                   src={img.dataUrl}
                   alt="Inserted"
-                  className="w-full h-full object-contain pointer-events-none"
+                  className="w-full h-full object-contain pointer-events-none select-none"
                 />
+
+                {/* Delete Button */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1582,10 +1733,44 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     }));
                   }}
                   title="Delete image"
-                  className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs cursor-pointer z-30"
+                  className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-md cursor-pointer z-30 transition-opacity"
                 >
                   &times;
                 </button>
+
+                {/* 4 Corner Resize Handles */}
+                {/* Bottom-Right (SE) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'image', img.id, 'se', img.xPercent, img.yPercent, img.widthPercent, img.heightPercent)
+                  }
+                  title="Drag to resize image"
+                  className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md cursor-se-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Bottom-Left (SW) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'image', img.id, 'sw', img.xPercent, img.yPercent, img.widthPercent, img.heightPercent)
+                  }
+                  title="Drag to resize image"
+                  className="absolute -bottom-2 -left-2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md cursor-sw-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Top-Right (NE) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'image', img.id, 'ne', img.xPercent, img.yPercent, img.widthPercent, img.heightPercent)
+                  }
+                  title="Drag to resize image"
+                  className="absolute -top-2 -right-2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md cursor-ne-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Top-Left (NW) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'image', img.id, 'nw', img.xPercent, img.yPercent, img.widthPercent, img.heightPercent)
+                  }
+                  title="Drag to resize image"
+                  className="absolute -top-2 -left-2 w-4 h-4 bg-white border-2 border-blue-600 rounded-full shadow-md cursor-nw-resize z-30 hover:scale-125 transition-transform"
+                />
               </div>
             ))}
 
@@ -1600,14 +1785,16 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   width: `${sig.widthPercent}%`,
                   height: `${sig.heightPercent}%`,
                 }}
-                className="absolute z-22 group border border-dashed border-emerald-400 bg-transparent cursor-move"
+                className="absolute z-22 group border-2 border-dashed border-emerald-500 hover:border-emerald-600 bg-transparent cursor-move select-none"
                 onClick={(e) => e.stopPropagation()}
               >
                 <img
                   src={sig.dataUrl}
                   alt="Signature"
-                  className="w-full h-full object-contain pointer-events-none"
+                  className="w-full h-full object-contain pointer-events-none select-none"
                 />
+
+                {/* Delete Button */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -1618,10 +1805,44 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     }));
                   }}
                   title="Delete signature"
-                  className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs cursor-pointer z-30"
+                  className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-md cursor-pointer z-30 transition-opacity"
                 >
                   &times;
                 </button>
+
+                {/* 4 Corner Resize Handles */}
+                {/* Bottom-Right (SE) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'signature', sig.id, 'se', sig.xPercent, sig.yPercent, sig.widthPercent, sig.heightPercent)
+                  }
+                  title="Drag to resize signature"
+                  className="absolute -bottom-2 -right-2 w-4 h-4 bg-white border-2 border-emerald-600 rounded-full shadow-md cursor-se-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Bottom-Left (SW) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'signature', sig.id, 'sw', sig.xPercent, sig.yPercent, sig.widthPercent, sig.heightPercent)
+                  }
+                  title="Drag to resize signature"
+                  className="absolute -bottom-2 -left-2 w-4 h-4 bg-white border-2 border-emerald-600 rounded-full shadow-md cursor-sw-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Top-Right (NE) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'signature', sig.id, 'ne', sig.xPercent, sig.yPercent, sig.widthPercent, sig.heightPercent)
+                  }
+                  title="Drag to resize signature"
+                  className="absolute -top-2 -right-2 w-4 h-4 bg-white border-2 border-emerald-600 rounded-full shadow-md cursor-ne-resize z-30 hover:scale-125 transition-transform"
+                />
+                {/* Top-Left (NW) */}
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'signature', sig.id, 'nw', sig.xPercent, sig.yPercent, sig.widthPercent, sig.heightPercent)
+                  }
+                  title="Drag to resize signature"
+                  className="absolute -top-2 -left-2 w-4 h-4 bg-white border-2 border-emerald-600 rounded-full shadow-md cursor-nw-resize z-30 hover:scale-125 transition-transform"
+                />
               </div>
             ))}
 
