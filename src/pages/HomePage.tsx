@@ -5,7 +5,7 @@ import { PopularTools } from '../components/home/PopularTools';
 import { TrustSection } from '../components/home/TrustSection';
 import { AdBanner } from '../components/common/AdBanner';
 import { CategoryDefinition, ToolDefinition } from '../types/tool';
-import { updatePageMeta } from '../utils/seoHelpers';
+import { updatePageMeta, getBaseUrl } from '../utils/seoHelpers';
 import { analytics } from '../services/analytics';
 
 interface HomePageProps {
@@ -22,12 +22,17 @@ export const HomePage: React.FC<HomePageProps> = ({
   onToggleFavorite,
 }) => {
   useEffect(() => {
+    const base = getBaseUrl();
     updatePageMeta({
       title: 'QuickVero — Powerful Online Tools. Simple & Fast.',
-      description: 'Compress, convert, resize and optimize your files directly in your browser with QuickVero. Free image, video, audio, PDF, and file utilities.',
-      canonicalUrl: 'https://quickvero.com/',
+      description: 'Free online video downloader, image compressor, PDF tools, and audio converters directly in your browser with QuickVero.',
+      canonicalUrl: `${base}/`,
       keywords: [
         'online tools',
+        'video downloader',
+        'instagram reel downloader',
+        'tiktok downloader',
+        'facebook video downloader',
         'image compressor',
         'pdf converter',
         'mp4 to mp3',
@@ -38,11 +43,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         'name': 'QuickVero',
-        'url': 'https://quickvero.com/',
+        'url': `${base}/`,
         'description': 'Powerful Online Tools. Simple & Fast.',
         'potentialAction': {
           '@type': 'SearchAction',
-          'target': 'https://quickvero.com/tools?q={search_term_string}',
+          'target': `${base}/tools?q={search_term_string}`,
           'query-input': 'required name=search_term_string'
         }
       }

@@ -1,6 +1,7 @@
 import { ProcessResult, ToolDefinition } from '../types/tool';
 import { compressImage, resizeImage, convertImageFormat } from './imageProcessor';
 import { convertImageToPdf } from './fileProcessor';
+import { compressPdfFile, splitPdfFile, convertPdfToJpg } from './pdfProcessor';
 import { extractAudioFromVideo, compressAudio, convertAudioFormat } from './audioProcessor';
 import { convertVideo, compressVideo, resizeVideo, convertVideoToGif } from './videoProcessor';
 
@@ -53,6 +54,18 @@ export class ToolService {
       case 'jpg-to-pdf': {
         const orientation = options.orientation || 'auto';
         return await convertImageToPdf(file, orientation, onProgress);
+      }
+
+      case 'pdf-compressor': {
+        return await compressPdfFile(file, options, onProgress);
+      }
+
+      case 'split-pdf': {
+        return await splitPdfFile(file, options, onProgress);
+      }
+
+      case 'pdf-to-jpg': {
+        return await convertPdfToJpg(file, options, onProgress);
       }
 
       case 'mp4-to-mp3':

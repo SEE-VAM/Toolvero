@@ -9,14 +9,30 @@ export interface SeoProps {
   structuredData?: Record<string, any>;
 }
 
+export function getBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin;
+  }
+  return 'https://quickvero.vercel.app';
+}
+
 export function updatePageMeta({
   title,
   description,
-  canonicalUrl = window.location.href,
+  canonicalUrl,
   keywords = [],
-  ogImage = 'https://quickvero.com/og-image.png',
+  ogImage,
   structuredData,
 }: SeoProps) {
+  const base = getBaseUrl();
+  const rawCanonical = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : base);
+  const resolvedCanonical = rawCanonical
+    .replace('https://quickvero.com', base)
+    .replace('http://quickvero.com', base);
+  const resolvedOgImage = ogImage
+    ? ogImage.replace('https://quickvero.com', base)
+    : `${base}/og-image.png`;
+
   // Update document title
   document.title = title;
 
@@ -40,13 +56,13 @@ export function updatePageMeta({
   // Open Graph
   setMeta('og:title', title, true);
   setMeta('og:description', description, true);
-  setMeta('og:url', canonicalUrl, true);
-  setMeta('og:image', ogImage, true);
+  setMeta('og:url', resolvedCanonical, true);
+  setMeta('og:image', resolvedOgImage, true);
 
   // Twitter
   setMeta('twitter:title', title);
   setMeta('twitter:description', description);
-  setMeta('twitter:image', ogImage);
+  setMeta('twitter:image', resolvedOgImage);
 
   // Canonical
   let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -55,7 +71,7 @@ export function updatePageMeta({
     canonical.rel = 'canonical';
     document.head.appendChild(canonical);
   }
-  canonical.href = canonicalUrl;
+  canonical.href = resolvedCanonical;
 
   // JSON-LD Structured Data
   const oldScript = document.getElementById('json-ld-data');
@@ -73,6 +89,7 @@ export function updatePageMeta({
 }
 
 export function generateToolStructuredData(tool: ToolDefinition) {
+  const base = getBaseUrl();
   const schema: Record<string, any>[] = [
     {
       '@context': 'https://schema.org',
@@ -86,7 +103,7 @@ export function generateToolStructuredData(tool: ToolDefinition) {
         'priceCurrency': 'USD'
       },
       'description': tool.description,
-      'url': `https://quickvero.com${tool.route}`,
+      'url': `${base}${tool.route}`,
     }
   ];
 

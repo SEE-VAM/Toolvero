@@ -4,7 +4,7 @@ import { TOOLS } from '../data/tools';
 import { CATEGORIES } from '../data/categories';
 import { ToolCard } from '../components/common/ToolCard';
 import { ToolCategory, ToolDefinition } from '../types/tool';
-import { updatePageMeta } from '../utils/seoHelpers';
+import { updatePageMeta, getBaseUrl } from '../utils/seoHelpers';
 import { analytics } from '../services/analytics';
 import { AdBanner } from '../components/common/AdBanner';
 
@@ -30,11 +30,12 @@ export const ToolsCatalogPage: React.FC<ToolsCatalogPageProps> = ({
       setSearchQuery(q);
     }
 
+    const base = getBaseUrl();
     updatePageMeta({
       title: 'All Online Tools Catalog — Free File Utilities | QuickVero',
-      description: 'Explore the full directory of online tools at QuickVero. Compress images, convert audio/video, edit PDFs, and generate checksums directly in your browser.',
-      canonicalUrl: 'https://quickvero.com/tools',
-      keywords: ['all tools', 'online utilities', 'image tools', 'pdf tools', 'video converters'],
+      description: 'Explore the full directory of online tools at QuickVero. Download videos, compress images, convert audio/video, and edit PDFs directly in your browser.',
+      canonicalUrl: `${base}/tools`,
+      keywords: ['all tools', 'online utilities', 'video downloader', 'image tools', 'pdf tools', 'video converters'],
     });
 
     analytics.trackPageView('/tools', 'QuickVero - All Tools Catalog');

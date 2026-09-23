@@ -10,6 +10,10 @@ import { ImageCompressorControls } from '../components/tool/controls/ImageCompre
 import { ImageResizerControls } from '../components/tool/controls/ImageResizerControls';
 import { FormatConverterControls } from '../components/tool/controls/FormatConverterControls';
 import { PdfControls } from '../components/tool/controls/PdfControls';
+import { MergePdfWorkspace } from '../components/tool/controls/MergePdfWorkspace';
+import { PdfCompressorControls } from '../components/tool/controls/PdfCompressorControls';
+import { SplitPdfControls } from '../components/tool/controls/SplitPdfControls';
+import { PdfToJpgControls } from '../components/tool/controls/PdfToJpgControls';
 import { Mp4ToMp3Controls } from '../components/tool/controls/Mp4ToMp3Controls';
 import { AudioCompressorControls } from '../components/tool/controls/AudioCompressorControls';
 import { AudioConverterControls } from '../components/tool/controls/AudioConverterControls';
@@ -156,6 +160,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
   const isBase64Tool = tool.id === 'base64-encoder-decoder';
   const isCalculatorTool = tool.id === 'file-size-calculator';
   const isVideoTrimmer = tool.id === 'video-trimmer';
+  const isMergePdf = tool.id === 'merge-pdf';
   const isVideoDownloader =
     tool.id === 'instagram-video-downloader' ||
     tool.id === 'facebook-video-downloader' ||
@@ -164,7 +169,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
     tool.id === 'twitter-video-downloader' ||
     tool.id === 'all-video-downloader' ||
     tool.id.includes('downloader');
-  const isStandaloneUtility = isHashTool || isBase64Tool || isCalculatorTool || isVideoDownloader || isVideoTrimmer;
+  const isStandaloneUtility = isHashTool || isBase64Tool || isCalculatorTool || isVideoDownloader || isVideoTrimmer || isMergePdf;
 
   return (
     <div className="py-8 sm:py-12">
@@ -183,6 +188,7 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
           {isBase64Tool && <Base64ToolWorkspace />}
           {isCalculatorTool && <CalculatorWorkspace />}
           {isVideoTrimmer && <VideoTrimmerWorkspace onShowToast={onShowToast} />}
+          {isMergePdf && <MergePdfWorkspace onShowToast={onShowToast} />}
           {isVideoDownloader && (
             <VideoDownloaderWorkspace tool={tool} onShowToast={onShowToast} />
           )}
@@ -248,6 +254,29 @@ export const ToolDetailPage: React.FC<ToolDetailPageProps> = ({
 
                   {tool.id === 'jpg-to-pdf' && (
                     <PdfControls
+                      onConvert={(opts) => executeProcessing(opts)}
+                      isProcessing={false}
+                    />
+                  )}
+
+                  {tool.id === 'pdf-compressor' && (
+                    <PdfCompressorControls
+                      onCompress={(opts) => executeProcessing(opts)}
+                      isProcessing={false}
+                    />
+                  )}
+
+                  {tool.id === 'split-pdf' && (
+                    <SplitPdfControls
+                      file={selectedFile}
+                      onSplit={(opts) => executeProcessing(opts)}
+                      isProcessing={false}
+                    />
+                  )}
+
+                  {tool.id === 'pdf-to-jpg' && (
+                    <PdfToJpgControls
+                      file={selectedFile}
                       onConvert={(opts) => executeProcessing(opts)}
                       isProcessing={false}
                     />

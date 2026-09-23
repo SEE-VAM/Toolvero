@@ -18,6 +18,8 @@
     "instagram-url-direct": "^2.0.7",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.468.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^3.11.174",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "snapsave-media-downloader": "^2.5.1",

@@ -4,7 +4,7 @@ import { TOOLS } from '../data/tools';
 import { ToolCategory, ToolDefinition } from '../types/tool';
 import { ToolCard } from '../components/common/ToolCard';
 import { DynamicIcon } from '../components/common/DynamicIcon';
-import { updatePageMeta } from '../utils/seoHelpers';
+import { updatePageMeta, getBaseUrl } from '../utils/seoHelpers';
 import { analytics } from '../services/analytics';
 import { AdBanner } from '../components/common/AdBanner';
 import { ChevronRight } from 'lucide-react';
@@ -27,10 +27,11 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
 
   useEffect(() => {
     if (category) {
+      const base = getBaseUrl();
       updatePageMeta({
         title: `${category.name} Online — Free, Fast & Private | QuickVero`,
         description: `${category.description} Free online tools for students, creators, and professionals.`,
-        canonicalUrl: `https://quickvero.com${category.route}`,
+        canonicalUrl: `${base}${category.route}`,
         keywords: [category.name.toLowerCase(), `${category.id} tools`, 'online utilities'],
       });
 
