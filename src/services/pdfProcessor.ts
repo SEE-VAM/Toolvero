@@ -552,7 +552,7 @@ export function normalizeFontFamily(rawFontName: string, rawFamily?: string): st
     return "'Arial', 'Helvetica Neue', Helvetica, sans-serif";
   }
 
-  // 3. Serif fonts
+  // 3. Genuine Serif typefaces (must explicitly be a known serif font)
   if (
     combined.includes('times') ||
     combined.includes('georgia') ||
@@ -562,7 +562,11 @@ export function normalizeFontFamily(rawFontName: string, rawFamily?: string): st
     combined.includes('palatino') ||
     combined.includes('minion') ||
     combined.includes('merriweather') ||
-    (combined.includes('serif') && !combined.includes('sans'))
+    combined.includes('caslon') ||
+    combined.includes('bookman') ||
+    combined.includes('didot') ||
+    combined.includes('bodoni') ||
+    (rawFontName.toLowerCase().includes('serif') && !rawFontName.toLowerCase().includes('sans'))
   ) {
     if (combined.includes('georgia')) {
       return "'Georgia', 'Times New Roman', serif";
@@ -645,8 +649,13 @@ export async function loadPdfPageForEditing(
 
     const style = textContent.styles[item.fontName];
     const fontFam = normalizeFontFamily(item.fontName, style?.fontFamily);
-    const isBold = /bold|black|heavy|700|800|900/i.test(item.fontName);
-    const isItalic = /italic|oblique/i.test(item.fontName);
+    const isBold =
+      /bold|black|heavy|700|800|900|\bbd\b|-bd\b|_bd\b/i.test(item.fontName) ||
+      (style?.fontFamily && /bold|black|heavy/i.test(style.fontFamily));
+    const isItalic =
+      /italic|oblique|slant|\bital\b|\bit\b|-it\b|_it\b/i.test(item.fontName) ||
+      (style?.fontFamily && /italic|oblique/i.test(style.fontFamily)) ||
+      (Array.isArray(item.transform) && Math.abs(item.transform[2]) > 0.05);
 
     textItems.push({
       id: `p${targetPageNum}_t${i}`,
@@ -658,9 +667,9 @@ export async function loadPdfPageForEditing(
       heightPercent,
       fontSize: Math.round(fontHeight),
       fontFamily: fontFam,
-      isBold,
-      isItalic,
-      textColor: '#000000',
+      isBold: !!isBold,
+      isItalic: !!isItalic,
+      textColor: '#111827',
     });
   }
 
@@ -874,11 +883,13 @@ export async function exportEditedPdf(
           ctx.strokeRect(0, 0, stampW, stampH);
 
           ctx.fillStyle = stamp.color;
+          const charCount = Math.max(stamp.text.length, 6);
+          const maxFontFromWidth = Math.floor((stampW - 14) / (charCount * 0.72));
           const fontSize = Math.max(
             10,
             Math.min(
-              Math.round(stampH * 0.48),
-              Math.round((stampW / (stamp.text.length + 1)) * 1.5)
+              Math.round(stampH * 0.52),
+              maxFontFromWidth
             )
           );
           ctx.font = `bold ${fontSize}px sans-serif`;
@@ -1115,11 +1126,13 @@ export async function exportPageAsImage(
         ctx.strokeRect(0, 0, stampW, stampH);
 
         ctx.fillStyle = stamp.color;
+        const charCount = Math.max(stamp.text.length, 6);
+        const maxFontFromWidth = Math.floor((stampW - 14) / (charCount * 0.72));
         const fontSize = Math.max(
           10,
           Math.min(
-            Math.round(stampH * 0.48),
-            Math.round((stampW / (stamp.text.length + 1)) * 1.5)
+            Math.round(stampH * 0.52),
+            maxFontFromWidth
           )
         );
         ctx.font = `bold ${fontSize}px sans-serif`;

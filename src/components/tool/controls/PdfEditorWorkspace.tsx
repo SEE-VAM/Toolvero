@@ -146,6 +146,17 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
   const currentPageEdits = getCurrentPageEdits(currentPage);
   const currentTextItems = pageItemsMap[currentPage] || [];
   const isCurrentPageDeleted = deletedPages.has(currentPage);
+  const activeItem = currentTextItems.find((t) => t.id === activeItemId);
+
+  const updateCurrentItemTypography = (updater: (item: DetectedTextItem) => DetectedTextItem) => {
+    if (!activeItemId) return;
+    setPageItemsMap((prev) => ({
+      ...prev,
+      [currentPage]: (prev[currentPage] || []).map((it) =>
+        it.id === activeItemId ? updater(it) : it
+      ),
+    }));
+  };
 
   // Load page data whenever currentPage, file, or page rotation changes
   useEffect(() => {
@@ -297,20 +308,20 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
         const aspect =
           resizingItem.startWidthPercent && resizingItem.startHeightPercent
             ? resizingItem.startWidthPercent / resizingItem.startHeightPercent
-            : 18 / 5.5;
+            : 24 / 6.5;
 
         if (resizingItem.handle === 'se') {
-          newW = Math.max(8, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
+          newW = Math.max(12, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
           newH = newW / aspect;
         } else if (resizingItem.handle === 'sw') {
           const candidateW = resizingItem.startWidthPercent - deltaXPercent;
-          if (candidateW >= 8 && resizingItem.startXPercent + deltaXPercent >= 0) {
+          if (candidateW >= 12 && resizingItem.startXPercent + deltaXPercent >= 0) {
             newX = resizingItem.startXPercent + deltaXPercent;
             newW = candidateW;
             newH = newW / aspect;
           }
         } else if (resizingItem.handle === 'ne') {
-          newW = Math.max(8, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
+          newW = Math.max(12, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
           newH = newW / aspect;
           const candidateY = resizingItem.startYPercent + (resizingItem.startHeightPercent - newH);
           if (candidateY >= 0) {
@@ -318,7 +329,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
           }
         } else if (resizingItem.handle === 'nw') {
           const candidateW = resizingItem.startWidthPercent - deltaXPercent;
-          if (candidateW >= 8 && resizingItem.startXPercent + deltaXPercent >= 0) {
+          if (candidateW >= 12 && resizingItem.startXPercent + deltaXPercent >= 0) {
             newX = resizingItem.startXPercent + deltaXPercent;
             newW = candidateW;
             newH = newW / aspect;
@@ -502,7 +513,12 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
         xPercent,
         yPercent,
         fontSize: selectedFontSize,
-        fontFamily: selectedFont,
+        fontFamily:
+          selectedFont === 'serif'
+            ? "'Times New Roman', 'Times', serif"
+            : selectedFont === 'monospace'
+            ? "'Consolas', 'Courier New', monospace"
+            : "'Calibri', 'Arial', sans-serif",
         color: selectedColor,
         isBold,
         isItalic,
@@ -705,8 +721,8 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
       color,
       xPercent: 35,
       yPercent: 35,
-      widthPercent: 18,
-      heightPercent: 5.5,
+      widthPercent: 24,
+      heightPercent: 6.5,
     };
 
     updatePageEdits((page) => ({
@@ -1140,14 +1156,40 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
               </button>
             </div>
 
-            {mode === 'add-text' && (
-              <>
+            {(mode === 'add-text' || activeItemId !== null) && (
+              <div
+                onMouseDown={(e) => e.preventDefault()}
+                className="flex items-center gap-2 flex-wrap"
+              >
                 <select
-                  value={selectedFont}
-                  onChange={(e) => setSelectedFont(e.target.value as any)}
+                  value={
+                    activeItem
+                      ? activeItem.fontFamily.includes('Times') ||
+                        (activeItem.fontFamily.includes('serif') && !activeItem.fontFamily.includes('sans'))
+                        ? 'serif'
+                        : activeItem.fontFamily.includes('mono')
+                        ? 'monospace'
+                        : 'sans-serif'
+                      : selectedFont
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedFont(val as any);
+                    if (activeItemId) {
+                      updateCurrentItemTypography((it) => ({
+                        ...it,
+                        fontFamily:
+                          val === 'serif'
+                            ? "'Times New Roman', 'Times', serif"
+                            : val === 'monospace'
+                            ? "'Consolas', 'Courier New', monospace"
+                            : "'Calibri', 'Arial', sans-serif",
+                      }));
+                    }
+                  }}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
                 >
-                  <option value="sans-serif">Sans-Serif (Arial / Helvetica)</option>
+                  <option value="sans-serif">Sans-Serif (Arial / Calibri)</option>
                   <option value="serif">Serif (Times New Roman)</option>
                   <option value="monospace">Monospace (Courier)</option>
                 </select>
@@ -1155,18 +1197,30 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                 <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-800">
                   <button
                     type="button"
-                    onClick={() => setSelectedFontSize((s) => Math.max(8, s - 1))}
-                    className="px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    onClick={() => {
+                      if (activeItemId) {
+                        updateCurrentItemTypography((it) => ({ ...it, fontSize: Math.max(8, it.fontSize - 1) }));
+                      } else {
+                        setSelectedFontSize((s) => Math.max(8, s - 1));
+                      }
+                    }}
+                    className="px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     -
                   </button>
                   <span className="px-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
-                    {selectedFontSize}px
+                    {activeItem ? activeItem.fontSize : selectedFontSize}px
                   </span>
                   <button
                     type="button"
-                    onClick={() => setSelectedFontSize((s) => Math.min(48, s + 1))}
-                    className="px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                    onClick={() => {
+                      if (activeItemId) {
+                        updateCurrentItemTypography((it) => ({ ...it, fontSize: Math.min(48, it.fontSize + 1) }));
+                      } else {
+                        setSelectedFontSize((s) => Math.min(48, s + 1));
+                      }
+                    }}
+                    className="px-2 py-1 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     +
                   </button>
@@ -1174,36 +1228,55 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
 
                 <input
                   type="color"
-                  value={selectedColor}
-                  onChange={(e) => setSelectedColor(e.target.value)}
+                  value={activeItem?.textColor || selectedColor}
+                  onChange={(e) => {
+                    setSelectedColor(e.target.value);
+                    if (activeItemId) {
+                      updateCurrentItemTypography((it) => ({ ...it, textColor: e.target.value }));
+                    }
+                  }}
                   title="Text Color"
                   className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer p-0.5 bg-white"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setIsBold(!isBold)}
-                  className={`p-1.5 rounded-lg border text-xs ${
-                    isBold
+                  onClick={() => {
+                    if (activeItemId) {
+                      updateCurrentItemTypography((it) => ({ ...it, isBold: !it.isBold }));
+                    } else {
+                      setIsBold(!isBold);
+                    }
+                  }}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    (activeItem ? activeItem.isBold : isBold)
                       ? 'border-brand-600 bg-brand-50 dark:bg-brand-950/60 text-brand-700'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600'
                   }`}
+                  title="Toggle Bold"
                 >
                   <Bold className="w-3.5 h-3.5" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setIsItalic(!isItalic)}
-                  className={`p-1.5 rounded-lg border text-xs ${
-                    isItalic
+                  onClick={() => {
+                    if (activeItemId) {
+                      updateCurrentItemTypography((it) => ({ ...it, isItalic: !it.isItalic }));
+                    } else {
+                      setIsItalic(!isItalic);
+                    }
+                  }}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    (activeItem ? activeItem.isItalic : isItalic)
                       ? 'border-brand-600 bg-brand-50 dark:bg-brand-950/60 text-brand-700'
                       : 'border-slate-200 dark:border-slate-700 text-slate-600'
                   }`}
+                  title="Toggle Italic"
                 >
                   <Italic className="w-3.5 h-3.5" />
                 </button>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -1632,16 +1705,24 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                         fontSize: `${item.fontSize}px`,
                         fontWeight: item.isBold ? 'bold' : 'normal',
                         fontStyle: item.isItalic ? 'italic' : 'normal',
+                        color: item.textColor || '#111827',
                         minWidth: '100%',
                         width: `${Math.max(displayText.length + 1, 6)}ch`,
                         lineHeight: 1,
                       }}
-                      className="bg-white text-black px-0.5 py-0 outline-none border-none leading-none block h-full"
+                      className="bg-white px-0.5 py-0 outline-none border-none leading-none block h-full"
                     />
                   ) : isEdited ? (
                     <span
-                      style={{ lineHeight: 1 }}
-                      className="block text-black px-0.5 py-0 leading-none whitespace-nowrap overflow-visible select-none"
+                      style={{
+                        lineHeight: 1,
+                        color: item.textColor || '#111827',
+                        fontFamily: item.fontFamily,
+                        fontSize: `${item.fontSize}px`,
+                        fontWeight: item.isBold ? 'bold' : 'normal',
+                        fontStyle: item.isItalic ? 'italic' : 'normal',
+                      }}
+                      className="block px-0.5 py-0 leading-none whitespace-nowrap overflow-visible select-none"
                     >
                       {displayText}
                     </span>
@@ -1942,20 +2023,22 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
 
             {/* Placed Status Stamps */}
             {currentPageEdits.stamps.map((stamp) => {
-              const stampW = stamp.widthPercent || 18;
-              const stampH = stamp.heightPercent || 5.5;
+              const stampW = stamp.widthPercent || 24;
+              const stampH = stamp.heightPercent || 6.5;
               const pageH = pageDimensions.height || 1000;
               const pageW = pageDimensions.width || 750;
               const stampPixelHeight = (stampH / 100) * pageH;
               const stampPixelWidth = (stampW / 100) * pageW;
+              const charCount = Math.max(stamp.text.length, 6);
+              const maxFontFromWidth = Math.floor((stampPixelWidth - 14) / (charCount * 0.72));
               const fontSize = Math.max(
-                12,
+                10,
                 Math.min(
-                  Math.round(stampPixelHeight * 0.48),
-                  Math.round((stampPixelWidth / (stamp.text.length + 1)) * 1.5)
+                  Math.round(stampPixelHeight * 0.52),
+                  maxFontFromWidth
                 )
               );
-              const borderWidth = Math.max(2, Math.round(stampPixelHeight * 0.07));
+              const borderWidth = Math.max(2, Math.round(stampPixelHeight * 0.075));
 
               return (
                 <div
@@ -1974,7 +2057,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span
-                    className="truncate text-center font-black select-none pointer-events-none"
+                    className="text-center font-black select-none pointer-events-none whitespace-nowrap overflow-visible"
                     style={{
                       fontSize: `${fontSize}px`,
                       lineHeight: 1,
