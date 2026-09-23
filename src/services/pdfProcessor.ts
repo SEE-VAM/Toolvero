@@ -411,3 +411,294 @@ export async function convertPdfToJpg(
     },
   };
 }
+
+// ==========================================
+// PDF EDITOR TYPES AND SERVICES
+// ==========================================
+
+export interface DetectedTextItem {
+  id: string;
+  originalText: string;
+  currentText: string;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+  fontSize: number;
+  fontFamily: 'sans-serif' | 'serif' | 'monospace';
+  isBold: boolean;
+  isItalic: boolean;
+  textColor: string;
+}
+
+export interface CustomTextBox {
+  id: string;
+  text: string;
+  xPercent: number;
+  yPercent: number;
+  fontSize: number;
+  fontFamily: 'sans-serif' | 'serif' | 'monospace';
+  color: string;
+  isBold: boolean;
+  isItalic: boolean;
+}
+
+export interface WhiteoutBox {
+  id: string;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+}
+
+export interface PageEdits {
+  editedItems: Record<string, string>; // item id -> replacement text
+  customBoxes: CustomTextBox[];
+  whiteouts: WhiteoutBox[];
+}
+
+export function normalizeFontFamily(rawFontName: string, rawFamily?: string): 'sans-serif' | 'serif' | 'monospace' {
+  const combined = `${rawFontName} ${rawFamily || ''}`.toLowerCase();
+  if (
+    combined.includes('times') ||
+    combined.includes('roman') ||
+    combined.includes('serif') ||
+    combined.includes('georgia') ||
+    combined.includes('cambria') ||
+    combined.includes('garamond')
+  ) {
+    return 'serif';
+  }
+  if (
+    combined.includes('courier') ||
+    combined.includes('mono') ||
+    combined.includes('consolas') ||
+    combined.includes('menlo')
+  ) {
+    return 'monospace';
+  }
+  return 'sans-serif';
+}
+
+/**
+ * Load a single page of PDF for visual interactive editing with text layer detection
+ */
+export async function loadPdfPageForEditing(
+  file: File,
+  pageNumber: number,
+  scale: number = 1.5
+): Promise<{
+  canvasDataUrl: string;
+  width: number;
+  height: number;
+  numPages: number;
+  textItems: DetectedTextItem[];
+}> {
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    cMapPacked: true,
+  });
+  const pdfDoc = await loadingTask.promise;
+  const numPages = pdfDoc.numPages;
+  const targetPageNum = Math.min(Math.max(1, pageNumber), numPages);
+  const page = await pdfDoc.getPage(targetPageNum);
+
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D context not available');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  await page.render({
+    canvasContext: ctx,
+    viewport,
+  }).promise;
+
+  const canvasDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+
+  // Extract text items
+  const textContent = await page.getTextContent();
+  const textItems: DetectedTextItem[] = [];
+
+  for (let i = 0; i < textContent.items.length; i++) {
+    const item: any = textContent.items[i];
+    if (!item.str || !item.str.trim()) continue;
+
+    // Viewport coordinates
+    const [vx, vy] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+    const fontHeight = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]) * scale;
+    const itemWidth = Math.max(item.width * scale, 12);
+    const itemHeight = Math.max(fontHeight * 1.15, 12);
+    const itemTop = Math.max(0, vy - fontHeight);
+
+    const xPercent = (vx / viewport.width) * 100;
+    const yPercent = (itemTop / viewport.height) * 100;
+    const widthPercent = (itemWidth / viewport.width) * 100;
+    const heightPercent = (itemHeight / viewport.height) * 100;
+
+    const style = textContent.styles[item.fontName];
+    const fontFam = normalizeFontFamily(item.fontName, style?.fontFamily);
+    const isBold = /bold|black|heavy|700|800|900/i.test(item.fontName);
+    const isItalic = /italic|oblique/i.test(item.fontName);
+
+    textItems.push({
+      id: `p${targetPageNum}_t${i}`,
+      originalText: item.str,
+      currentText: item.str,
+      xPercent,
+      yPercent,
+      widthPercent,
+      heightPercent,
+      fontSize: Math.round(fontHeight),
+      fontFamily: fontFam,
+      isBold,
+      isItalic,
+      textColor: '#000000',
+    });
+  }
+
+  return {
+    canvasDataUrl,
+    width: viewport.width,
+    height: viewport.height,
+    numPages,
+    textItems,
+  };
+}
+
+/**
+ * Synthesizes all modified pages, text replacements, custom text, and whiteouts into a newly generated PDF
+ */
+export async function exportEditedPdf(
+  file: File,
+  allPageEdits: Record<number, PageEdits>,
+  pageItemsMap: Record<number, DetectedTextItem[]>,
+  onProgress?: (percent: number) => void
+): Promise<ProcessResult> {
+  onProgress?.(10);
+  const arrayBuffer = await file.arrayBuffer();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    cMapPacked: true,
+  });
+  const pdfDoc = await loadingTask.promise;
+  const numPages = pdfDoc.numPages;
+
+  const newPdf = await PDFDocument.create();
+
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    const page = await pdfDoc.getPage(pageNum);
+    const scale = 2.0; // High resolution export for crisp print
+    const viewport = page.getViewport({ scale });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context not available');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({
+      canvasContext: ctx,
+      viewport,
+    }).promise;
+
+    const pageEdits = allPageEdits[pageNum];
+    const items = pageItemsMap[pageNum] || [];
+
+    if (pageEdits) {
+      // 1. Apply Whiteouts
+      if (pageEdits.whiteouts && pageEdits.whiteouts.length > 0) {
+        ctx.fillStyle = '#ffffff';
+        for (const w of pageEdits.whiteouts) {
+          const wx = (w.xPercent / 100) * canvas.width;
+          const wy = (w.yPercent / 100) * canvas.height;
+          const ww = (w.widthPercent / 100) * canvas.width;
+          const wh = (w.heightPercent / 100) * canvas.height;
+          ctx.fillRect(wx, wy, ww, wh);
+        }
+      }
+
+      // 2. Apply Text Item Edits (in matching font family, size, weight)
+      if (pageEdits.editedItems) {
+        for (const [id, newText] of Object.entries(pageEdits.editedItems)) {
+          const item = items.find((t) => t.id === id);
+          if (!item) continue;
+
+          const ix = (item.xPercent / 100) * canvas.width;
+          const iy = (item.yPercent / 100) * canvas.height;
+          const iw = (item.widthPercent / 100) * canvas.width;
+          const ih = (item.heightPercent / 100) * canvas.height;
+
+          // Whiteout old text area
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(ix - 2, iy - 2, Math.max(iw, ctx.measureText(newText).width) + 8, ih + 4);
+
+          // Render replacement text in exact matching font
+          const scaledFontSize = Math.round(item.fontSize * (scale / 1.5));
+          ctx.font = `${item.isBold ? 'bold ' : ''}${item.isItalic ? 'italic ' : ''}${scaledFontSize}px ${item.fontFamily}`;
+          ctx.fillStyle = item.textColor || '#000000';
+          ctx.textBaseline = 'top';
+          ctx.fillText(newText, ix, iy + scaledFontSize * 0.1);
+        }
+      }
+
+      // 3. Apply Added Custom Text Boxes
+      if (pageEdits.customBoxes && pageEdits.customBoxes.length > 0) {
+        for (const box of pageEdits.customBoxes) {
+          const bx = (box.xPercent / 100) * canvas.width;
+          const by = (box.yPercent / 100) * canvas.height;
+          const scaledFontSize = Math.round(box.fontSize * (scale / 1.5));
+          ctx.font = `${box.isBold ? 'bold ' : ''}${box.isItalic ? 'italic ' : ''}${scaledFontSize}px ${box.fontFamily}`;
+          ctx.fillStyle = box.color || '#000000';
+          ctx.textBaseline = 'top';
+          ctx.fillText(box.text, bx, by);
+        }
+      }
+    }
+
+    // Embed synthesized page into new PDF
+    const jpgDataUrl = canvas.toDataURL('image/jpeg', 0.94);
+    const embeddedImg = await newPdf.embedJpg(jpgDataUrl);
+
+    const origViewport = page.getViewport({ scale: 1.0 });
+    const newPage = newPdf.addPage([origViewport.width, origViewport.height]);
+    newPage.drawImage(embeddedImg, {
+      x: 0,
+      y: 0,
+      width: origViewport.width,
+      height: origViewport.height,
+    });
+
+    const progress = Math.round(10 + (pageNum / numPages) * 85);
+    onProgress?.(progress);
+    await new Promise((r) => setTimeout(r, 10));
+  }
+
+  const outputPdfBytes = await newPdf.save({ useObjectStreams: true });
+  const finalBlob = new Blob([outputPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+  const base = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+  const outName = sanitizeFilename(`${base}_edited.pdf`);
+  const downloadUrl = URL.createObjectURL(finalBlob);
+
+  onProgress?.(100);
+
+  return {
+    blob: finalBlob,
+    downloadUrl,
+    filename: outName,
+    originalSize: file.size,
+    processedSize: finalBlob.size,
+    savingsPercentage: 0,
+    metadata: {
+      pages: numPages,
+    },
+  };
+}

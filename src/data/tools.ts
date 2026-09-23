@@ -785,6 +785,51 @@ export const TOOLS: ToolDefinition[] = [
 
   // ================= PDF TOOLS =================
   {
+    id: 'pdf-editor',
+    name: 'PDF Editor',
+    slug: 'pdf-editor',
+    category: 'pdf',
+    route: '/tools/pdf-editor',
+    shortDescription: 'Edit text, replace words, add text, and modify any PDF in matching font.',
+    description: 'Edit any PDF document directly in your browser. Click on any line or word to change its text in the original matching font, add new text boxes, erase sections with whiteout, and export a clean PDF without uploading to external servers.',
+    icon: 'Edit3',
+    supportedFormats: ['application/pdf'],
+    maxFileSizeMB: 80,
+    engine: 'browser',
+    isPopular: true,
+    seoTitle: 'PDF Editor Online — Edit PDF Text, Words & Font Free | QuickVero',
+    seoDescription: 'Free online PDF Editor by QuickVero. Click any line or word to edit text in its matching font, add new text, erase mistakes, and download your edited PDF privately in your browser.',
+    keywords: ['pdf editor', 'edit pdf text', 'change words in pdf', 'edit pdf online free', 'modify pdf text', 'pdf font editor', 'online pdf editor'],
+    features: [
+      'Click-to-edit any line or word in matching original font',
+      'Automatic font family, weight, and size detection',
+      'Add new custom text boxes anywhere on the document',
+      'Whiteout and redaction eraser tool',
+      'Multi-page PDF document editing and pagination',
+      '100% private in-browser editing — files never leave your device'
+    ],
+    howToSteps: [
+      { step: 1, title: 'Upload your PDF', description: 'Select or drag-and-drop the PDF document you want to edit.' },
+      { step: 2, title: 'Click on text to edit', description: 'Click directly on any line or word on the document. An editable box will appear with the matching font.' },
+      { step: 3, title: 'Add text or whiteout', description: 'Use the toolbar to drop new text boxes or whiteout unwanted information.' },
+      { step: 4, title: 'Download edited PDF', description: 'Click Download Edited PDF to save your updated document instantly.' }
+    ],
+    faqs: [
+      {
+        question: 'Will the edited text match the original PDF font?',
+        answer: 'Yes! QuickVero inspects the underlying typography and automatically applies the matching font family (Serif, Sans-serif, Monospace), font size, and bold/italic weight so your changes blend in naturally.'
+      },
+      {
+        question: 'Can I add new text boxes anywhere on the page?',
+        answer: 'Yes, select the "Add Text" tool from the top bar and click anywhere on the page to insert new text with customizable font size and colors.'
+      },
+      {
+        question: 'Is my confidential document secure?',
+        answer: 'Absolutely. All PDF rendering, editing, and saving happens 100% client-side inside your browser. No files are ever sent to any remote server.'
+      }
+    ]
+  },
+  {
     id: 'pdf-compressor',
     name: 'PDF Compressor',
     slug: 'pdf-compressor',
