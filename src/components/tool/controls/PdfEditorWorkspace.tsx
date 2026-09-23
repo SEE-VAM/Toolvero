@@ -61,7 +61,7 @@ interface DraggingState {
 }
 
 interface ResizingState {
-  type: 'image' | 'signature' | 'shape' | 'whiteout';
+  type: 'image' | 'signature' | 'shape' | 'whiteout' | 'stamp';
   id: string;
   handle: 'se' | 'sw' | 'ne' | 'nw';
   startXPercent: number;
@@ -364,6 +364,16 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
             ),
           };
         }
+        if (resizingItem.type === 'stamp') {
+          return {
+            ...page,
+            stamps: page.stamps.map((st) =>
+              st.id === resizingItem.id
+                ? { ...st, xPercent: newX, yPercent: newY, widthPercent: newW, heightPercent: newH }
+                : st
+            ),
+          };
+        }
         return page;
       });
       return;
@@ -660,6 +670,8 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
       color,
       xPercent: 35,
       yPercent: 35,
+      widthPercent: 22,
+      heightPercent: 6,
     };
 
     updatePageEdits((page) => ({
@@ -1498,13 +1510,34 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   &times;
                 </button>
 
-                {/* Resize Handle */}
+                {/* 4 Corner Resize Handles */}
                 <div
                   onMouseDown={(e) =>
                     handleResizeMouseDown(e, 'whiteout', w.id, 'se', w.xPercent, w.yPercent, w.widthPercent, w.heightPercent)
                   }
                   title="Drag to resize whiteout"
-                  className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-600 rounded-xs shadow-xs cursor-se-resize z-20 hover:scale-125 transition-transform"
+                  className="opacity-90 group-hover:opacity-100 absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-se-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'whiteout', w.id, 'sw', w.xPercent, w.yPercent, w.widthPercent, w.heightPercent)
+                  }
+                  title="Drag to resize whiteout"
+                  className="opacity-90 group-hover:opacity-100 absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-sw-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'whiteout', w.id, 'ne', w.xPercent, w.yPercent, w.widthPercent, w.heightPercent)
+                  }
+                  title="Drag to resize whiteout"
+                  className="opacity-90 group-hover:opacity-100 absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-ne-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'whiteout', w.id, 'nw', w.xPercent, w.yPercent, w.widthPercent, w.heightPercent)
+                  }
+                  title="Drag to resize whiteout"
+                  className="opacity-90 group-hover:opacity-100 absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-nw-resize z-30 hover:scale-125 transition-transform"
                 />
               </div>
             ))}
@@ -1535,7 +1568,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     isEditing
                       ? 'ring-2 ring-brand-500 bg-white shadow-lg z-30 rounded-xs'
                       : isEdited
-                      ? 'bg-white text-slate-900 border-2 border-amber-400 rounded-xs shadow-xs z-20'
+                      ? 'bg-white text-slate-900 z-15 hover:outline hover:outline-1 hover:outline-brand-400 cursor-text'
                       : 'hover:bg-brand-500/15 hover:ring-1 hover:ring-brand-400 cursor-text'
                   }`}
                   onClick={(e) => {
@@ -1566,10 +1599,10 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                         minWidth: '100%',
                         width: `${Math.max(displayText.length + 1, 6)}ch`,
                       }}
-                      className="bg-white text-black px-1.5 py-0.5 outline-none border-none leading-normal block"
+                      className="bg-white text-black px-1 py-0 outline-none border-none leading-normal block"
                     />
                   ) : isEdited ? (
-                    <span className="block bg-white text-black px-1.5 py-0.5 leading-normal whitespace-nowrap overflow-visible">
+                    <span className="block bg-white text-black px-0.5 py-0 leading-normal whitespace-nowrap overflow-visible select-none">
                       {displayText}
                     </span>
                   ) : null}
@@ -1593,7 +1626,7 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   width: 'max-content',
                   maxWidth: '92%',
                 }}
-                className="absolute z-20 group border border-dashed border-brand-400 bg-white/95 px-1.5 py-1 rounded min-w-[60px] cursor-move shadow-xs"
+                className="absolute z-20 group border border-dashed border-transparent hover:border-brand-400 focus-within:border-brand-400 bg-white/95 px-1.5 py-0.5 rounded min-w-[60px] cursor-move shadow-xs"
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
@@ -1691,13 +1724,34 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                   &times;
                 </button>
 
-                {/* Resize Handle (Bottom-Right) */}
+                {/* 4 Corner Resize Handles */}
                 <div
                   onMouseDown={(e) =>
                     handleResizeMouseDown(e, 'shape', sh.id, 'se', sh.xPercent, sh.yPercent, sh.widthPercent, sh.heightPercent)
                   }
                   title="Drag to resize shape"
-                  className="opacity-0 group-hover:opacity-100 absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-xs cursor-se-resize z-30 hover:scale-125 transition-transform"
+                  className="opacity-90 group-hover:opacity-100 absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-md cursor-se-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'shape', sh.id, 'sw', sh.xPercent, sh.yPercent, sh.widthPercent, sh.heightPercent)
+                  }
+                  title="Drag to resize shape"
+                  className="opacity-90 group-hover:opacity-100 absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-md cursor-sw-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'shape', sh.id, 'ne', sh.xPercent, sh.yPercent, sh.widthPercent, sh.heightPercent)
+                  }
+                  title="Drag to resize shape"
+                  className="opacity-90 group-hover:opacity-100 absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-md cursor-ne-resize z-30 hover:scale-125 transition-transform"
+                />
+                <div
+                  onMouseDown={(e) =>
+                    handleResizeMouseDown(e, 'shape', sh.id, 'nw', sh.xPercent, sh.yPercent, sh.widthPercent, sh.heightPercent)
+                  }
+                  title="Drag to resize shape"
+                  className="opacity-90 group-hover:opacity-100 absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-600 rounded-full shadow-md cursor-nw-resize z-30 hover:scale-125 transition-transform"
                 />
               </div>
             ))}
@@ -1847,36 +1901,80 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
             ))}
 
             {/* Placed Status Stamps */}
-            {currentPageEdits.stamps.map((stamp) => (
-              <div
-                key={stamp.id}
-                onMouseDown={(e) => handleMouseDown(e, 'stamp', stamp.id, stamp.xPercent, stamp.yPercent)}
-                style={{
-                  left: `${stamp.xPercent}%`,
-                  top: `${stamp.yPercent}%`,
-                  borderColor: stamp.color,
-                  color: stamp.color,
-                }}
-                className="absolute z-25 group border-[3.5px] border-solid rounded-md px-4 py-2 font-black text-xl tracking-wider select-none transform -rotate-6 cursor-move bg-white/40 backdrop-blur-[1px] shadow-sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span>{stamp.text}</span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updatePageEdits((page) => ({
-                      ...page,
-                      stamps: page.stamps.filter((item) => item.id !== stamp.id),
-                    }));
+            {currentPageEdits.stamps.map((stamp) => {
+              const stampW = stamp.widthPercent || 22;
+              const stampH = stamp.heightPercent || 6;
+              return (
+                <div
+                  key={stamp.id}
+                  onMouseDown={(e) => handleMouseDown(e, 'stamp', stamp.id, stamp.xPercent, stamp.yPercent)}
+                  style={{
+                    left: `${stamp.xPercent}%`,
+                    top: `${stamp.yPercent}%`,
+                    width: `${stampW}%`,
+                    height: `${stampH}%`,
+                    borderColor: stamp.color,
+                    color: stamp.color,
                   }}
-                  title="Delete stamp"
-                  className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs cursor-pointer"
+                  className="absolute z-25 group border-[3px] border-solid rounded-md font-black tracking-wider select-none transform -rotate-6 cursor-move bg-white/60 backdrop-blur-[1px] shadow-sm flex items-center justify-center p-1"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  &times;
-                </button>
-              </div>
-            ))}
+                  <span
+                    className="truncate text-center font-black select-none pointer-events-none"
+                    style={{
+                      fontSize: 'clamp(12px, 2.2vw, 24px)',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {stamp.text}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updatePageEdits((page) => ({
+                        ...page,
+                        stamps: page.stamps.filter((item) => item.id !== stamp.id),
+                      }));
+                    }}
+                    title="Delete stamp"
+                    className="opacity-0 group-hover:opacity-100 absolute -top-3 -right-3 w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs shadow-xs cursor-pointer z-30"
+                  >
+                    &times;
+                  </button>
+
+                  {/* 4 Corner Resize Handles */}
+                  <div
+                    onMouseDown={(e) =>
+                      handleResizeMouseDown(e, 'stamp', stamp.id, 'se', stamp.xPercent, stamp.yPercent, stampW, stampH)
+                    }
+                    title="Drag to resize stamp"
+                    className="opacity-90 group-hover:opacity-100 absolute -bottom-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-se-resize z-30 hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onMouseDown={(e) =>
+                      handleResizeMouseDown(e, 'stamp', stamp.id, 'sw', stamp.xPercent, stamp.yPercent, stampW, stampH)
+                    }
+                    title="Drag to resize stamp"
+                    className="opacity-90 group-hover:opacity-100 absolute -bottom-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-sw-resize z-30 hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onMouseDown={(e) =>
+                      handleResizeMouseDown(e, 'stamp', stamp.id, 'ne', stamp.xPercent, stamp.yPercent, stampW, stampH)
+                    }
+                    title="Drag to resize stamp"
+                    className="opacity-90 group-hover:opacity-100 absolute -top-2 -right-2 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-ne-resize z-30 hover:scale-125 transition-transform"
+                  />
+                  <div
+                    onMouseDown={(e) =>
+                      handleResizeMouseDown(e, 'stamp', stamp.id, 'nw', stamp.xPercent, stamp.yPercent, stampW, stampH)
+                    }
+                    title="Drag to resize stamp"
+                    className="opacity-90 group-hover:opacity-100 absolute -top-2 -left-2 w-3.5 h-3.5 bg-white border-2 border-slate-700 rounded-full shadow-md cursor-nw-resize z-30 hover:scale-125 transition-transform"
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

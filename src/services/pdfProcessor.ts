@@ -478,6 +478,8 @@ export interface PlacableStamp {
   color: string;
   xPercent: number;
   yPercent: number;
+  widthPercent?: number;
+  heightPercent?: number;
 }
 
 export interface PageEdits {
@@ -803,18 +805,23 @@ export async function exportEditedPdf(
         for (const stamp of pageEdits.stamps) {
           const stX = (stamp.xPercent / 100) * canvas.width;
           const stY = (stamp.yPercent / 100) * canvas.height;
-          const stampW = 150 * (scale / 1.5);
-          const stampH = 46 * (scale / 1.5);
+          const stampW = stamp.widthPercent
+            ? (stamp.widthPercent / 100) * canvas.width
+            : 150 * (scale / 1.5);
+          const stampH = stamp.heightPercent
+            ? (stamp.heightPercent / 100) * canvas.height
+            : 46 * (scale / 1.5);
 
           ctx.save();
           ctx.translate(stX, stY);
           ctx.rotate(-0.12);
           ctx.strokeStyle = stamp.color;
-          ctx.lineWidth = 3.5 * (scale / 1.5);
+          ctx.lineWidth = Math.max(2, Math.round(stampH * 0.08));
           ctx.strokeRect(0, 0, stampW, stampH);
 
           ctx.fillStyle = stamp.color;
-          ctx.font = `bold ${20 * (scale / 1.5)}px sans-serif`;
+          const fontSize = Math.max(10, Math.round(stampH * 0.44));
+          ctx.font = `bold ${fontSize}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(stamp.text, stampW / 2, stampH / 2);
@@ -1033,18 +1040,23 @@ export async function exportPageAsImage(
       for (const stamp of pageEdits.stamps) {
         const stX = (stamp.xPercent / 100) * canvas.width;
         const stY = (stamp.yPercent / 100) * canvas.height;
-        const stampW = 150 * (scale / 1.5);
-        const stampH = 46 * (scale / 1.5);
+        const stampW = stamp.widthPercent
+          ? (stamp.widthPercent / 100) * canvas.width
+          : 150 * (scale / 1.5);
+        const stampH = stamp.heightPercent
+          ? (stamp.heightPercent / 100) * canvas.height
+          : 46 * (scale / 1.5);
 
         ctx.save();
         ctx.translate(stX, stY);
         ctx.rotate(-0.12);
         ctx.strokeStyle = stamp.color;
-        ctx.lineWidth = 3.5 * (scale / 1.5);
+        ctx.lineWidth = Math.max(2, Math.round(stampH * 0.08));
         ctx.strokeRect(0, 0, stampW, stampH);
 
         ctx.fillStyle = stamp.color;
-        ctx.font = `bold ${20 * (scale / 1.5)}px sans-serif`;
+        const fontSize = Math.max(10, Math.round(stampH * 0.44));
+        ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(stamp.text, stampW / 2, stampH / 2);
