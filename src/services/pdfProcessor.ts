@@ -3,9 +3,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { ProcessResult } from '../types/tool';
 import { sanitizeFilename } from '../utils/fileHelpers';
 
-// Set up PDF.js worker using CDN fallback with version matching
+// Set up PDF.js worker using same-origin local worker to prevent CORS/SecurityError
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 }
 
 /**
@@ -117,8 +117,7 @@ export async function compressPdfFile(
 
   try {
     const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || '3.11.174'}/cmaps/`,
+      data: new Uint8Array(arrayBuffer),
       cMapPacked: true,
     });
     const pdfDoc = await loadingTask.promise;
@@ -158,17 +157,9 @@ export async function compressPdfFile(
         viewport,
       }).promise;
 
-      // Convert canvas to compressed JPEG
-      const jpgBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Failed to compress page image.'))),
-          'image/jpeg',
-          targetQuality
-        );
-      });
-
-      const jpgBytes = new Uint8Array(await jpgBlob.arrayBuffer());
-      const embeddedJpg = await newPdf.embedJpg(jpgBytes);
+      // Convert canvas to compressed JPEG directly via Data URL
+      const jpgDataUrl = canvas.toDataURL('image/jpeg', targetQuality);
+      const embeddedJpg = await newPdf.embedJpg(jpgDataUrl);
 
       // Preserve exact original page dimensions so layout remains identical
       const newPage = newPdf.addPage([origW, origH]);
@@ -359,7 +350,7 @@ export async function convertPdfToJpg(
   const arrayBuffer = await file.arrayBuffer();
 
   onProgress?.(30);
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
   const pdfDoc = await loadingTask.promise;
   const numPages = pdfDoc.numPages;
 
