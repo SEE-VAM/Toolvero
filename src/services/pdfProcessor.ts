@@ -820,7 +820,13 @@ export async function exportEditedPdf(
           ctx.strokeRect(0, 0, stampW, stampH);
 
           ctx.fillStyle = stamp.color;
-          const fontSize = Math.max(10, Math.round(stampH * 0.44));
+          const fontSize = Math.max(
+            10,
+            Math.min(
+              Math.round(stampH * 0.48),
+              Math.round((stampW / (stamp.text.length + 1)) * 1.5)
+            )
+          );
           ctx.font = `bold ${fontSize}px sans-serif`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -1055,7 +1061,13 @@ export async function exportPageAsImage(
         ctx.strokeRect(0, 0, stampW, stampH);
 
         ctx.fillStyle = stamp.color;
-        const fontSize = Math.max(10, Math.round(stampH * 0.44));
+        const fontSize = Math.max(
+          10,
+          Math.min(
+            Math.round(stampH * 0.48),
+            Math.round((stampW / (stamp.text.length + 1)) * 1.5)
+          )
+        );
         ctx.font = `bold ${fontSize}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';

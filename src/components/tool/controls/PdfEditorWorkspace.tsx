@@ -293,7 +293,42 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
       let newX = resizingItem.startXPercent;
       let newY = resizingItem.startYPercent;
 
-      if (resizingItem.handle === 'se') {
+      if (resizingItem.type === 'stamp') {
+        const aspect =
+          resizingItem.startWidthPercent && resizingItem.startHeightPercent
+            ? resizingItem.startWidthPercent / resizingItem.startHeightPercent
+            : 18 / 5.5;
+
+        if (resizingItem.handle === 'se') {
+          newW = Math.max(8, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
+          newH = newW / aspect;
+        } else if (resizingItem.handle === 'sw') {
+          const candidateW = resizingItem.startWidthPercent - deltaXPercent;
+          if (candidateW >= 8 && resizingItem.startXPercent + deltaXPercent >= 0) {
+            newX = resizingItem.startXPercent + deltaXPercent;
+            newW = candidateW;
+            newH = newW / aspect;
+          }
+        } else if (resizingItem.handle === 'ne') {
+          newW = Math.max(8, Math.min(80, resizingItem.startWidthPercent + deltaXPercent));
+          newH = newW / aspect;
+          const candidateY = resizingItem.startYPercent + (resizingItem.startHeightPercent - newH);
+          if (candidateY >= 0) {
+            newY = candidateY;
+          }
+        } else if (resizingItem.handle === 'nw') {
+          const candidateW = resizingItem.startWidthPercent - deltaXPercent;
+          if (candidateW >= 8 && resizingItem.startXPercent + deltaXPercent >= 0) {
+            newX = resizingItem.startXPercent + deltaXPercent;
+            newW = candidateW;
+            newH = newW / aspect;
+            const candidateY = resizingItem.startYPercent + (resizingItem.startHeightPercent - newH);
+            if (candidateY >= 0) {
+              newY = candidateY;
+            }
+          }
+        }
+      } else if (resizingItem.handle === 'se') {
         newW = Math.max(3, Math.min(100 - resizingItem.startXPercent, resizingItem.startWidthPercent + deltaXPercent));
         newH = Math.max(2, Math.min(100 - resizingItem.startYPercent, resizingItem.startHeightPercent + deltaYPercent));
       } else if (resizingItem.handle === 'sw') {
@@ -670,8 +705,8 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
       color,
       xPercent: 35,
       yPercent: 35,
-      widthPercent: 22,
-      heightPercent: 6,
+      widthPercent: 18,
+      heightPercent: 5.5,
     };
 
     updatePageEdits((page) => ({
@@ -1902,8 +1937,21 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
 
             {/* Placed Status Stamps */}
             {currentPageEdits.stamps.map((stamp) => {
-              const stampW = stamp.widthPercent || 22;
-              const stampH = stamp.heightPercent || 6;
+              const stampW = stamp.widthPercent || 18;
+              const stampH = stamp.heightPercent || 5.5;
+              const pageH = pageDimensions.height || 1000;
+              const pageW = pageDimensions.width || 750;
+              const stampPixelHeight = (stampH / 100) * pageH;
+              const stampPixelWidth = (stampW / 100) * pageW;
+              const fontSize = Math.max(
+                12,
+                Math.min(
+                  Math.round(stampPixelHeight * 0.48),
+                  Math.round((stampPixelWidth / (stamp.text.length + 1)) * 1.5)
+                )
+              );
+              const borderWidth = Math.max(2, Math.round(stampPixelHeight * 0.07));
+
               return (
                 <div
                   key={stamp.id}
@@ -1914,15 +1962,16 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     width: `${stampW}%`,
                     height: `${stampH}%`,
                     borderColor: stamp.color,
+                    borderWidth: `${borderWidth}px`,
                     color: stamp.color,
                   }}
-                  className="absolute z-25 group border-[3px] border-solid rounded-md font-black tracking-wider select-none transform -rotate-6 cursor-move bg-white/60 backdrop-blur-[1px] shadow-sm flex items-center justify-center p-1"
+                  className="absolute z-25 group border-solid rounded-md font-black tracking-wider select-none transform -rotate-6 cursor-move bg-transparent hover:bg-black/5 flex items-center justify-center p-1"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span
                     className="truncate text-center font-black select-none pointer-events-none"
                     style={{
-                      fontSize: 'clamp(12px, 2.2vw, 24px)',
+                      fontSize: `${fontSize}px`,
                       lineHeight: 1,
                     }}
                   >
