@@ -1593,13 +1593,14 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                     minWidth: `${Math.max(item.widthPercent, 3)}%`,
                     width: isEditing || isEdited ? 'max-content' : `${Math.max(item.widthPercent, 3)}%`,
                     maxWidth: '96%',
-                    minHeight: `${item.heightPercent}%`,
+                    height: `${item.heightPercent}%`,
                     fontFamily: item.fontFamily,
                     fontSize: `${item.fontSize}px`,
+                    lineHeight: 1,
                     fontWeight: item.isBold ? 'bold' : 'normal',
                     fontStyle: item.isItalic ? 'italic' : 'normal',
                   }}
-                  className={`absolute z-15 transition-all ${
+                  className={`absolute z-15 transition-all flex items-center ${
                     isEditing
                       ? 'ring-2 ring-brand-500 bg-white shadow-lg z-30 rounded-xs'
                       : isEdited
@@ -1633,11 +1634,15 @@ export const PdfEditorWorkspace: React.FC<PdfEditorWorkspaceProps> = ({ onShowTo
                         fontStyle: item.isItalic ? 'italic' : 'normal',
                         minWidth: '100%',
                         width: `${Math.max(displayText.length + 1, 6)}ch`,
+                        lineHeight: 1,
                       }}
-                      className="bg-white text-black px-1 py-0 outline-none border-none leading-normal block"
+                      className="bg-white text-black px-0.5 py-0 outline-none border-none leading-none block h-full"
                     />
                   ) : isEdited ? (
-                    <span className="block bg-white text-black px-0.5 py-0 leading-normal whitespace-nowrap overflow-visible select-none">
+                    <span
+                      style={{ lineHeight: 1 }}
+                      className="block text-black px-0.5 py-0 leading-none whitespace-nowrap overflow-visible select-none"
+                    >
                       {displayText}
                     </span>
                   ) : null}

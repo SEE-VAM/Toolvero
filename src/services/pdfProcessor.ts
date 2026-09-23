@@ -425,7 +425,7 @@ export interface DetectedTextItem {
   widthPercent: number;
   heightPercent: number;
   fontSize: number;
-  fontFamily: 'sans-serif' | 'serif' | 'monospace';
+  fontFamily: string;
   isBold: boolean;
   isItalic: boolean;
   textColor: string;
@@ -437,7 +437,7 @@ export interface CustomTextBox {
   xPercent: number;
   yPercent: number;
   fontSize: number;
-  fontFamily: 'sans-serif' | 'serif' | 'monospace';
+  fontFamily: string;
   color: string;
   isBold: boolean;
   isItalic: boolean;
@@ -503,27 +503,81 @@ export function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement>
   });
 }
 
-export function normalizeFontFamily(rawFontName: string, rawFamily?: string): 'sans-serif' | 'serif' | 'monospace' {
+export function normalizeFontFamily(rawFontName: string, rawFamily?: string): string {
   const combined = `${rawFontName} ${rawFamily || ''}`.toLowerCase();
-  if (
-    combined.includes('times') ||
-    combined.includes('roman') ||
-    combined.includes('serif') ||
-    combined.includes('georgia') ||
-    combined.includes('cambria') ||
-    combined.includes('garamond')
-  ) {
-    return 'serif';
-  }
+
+  // 1. Monospace fonts
   if (
     combined.includes('courier') ||
     combined.includes('mono') ||
     combined.includes('consolas') ||
-    combined.includes('menlo')
+    combined.includes('menlo') ||
+    combined.includes('inconsolata')
   ) {
-    return 'monospace';
+    return "'Consolas', 'Courier New', monospace";
   }
-  return 'sans-serif';
+
+  // 2. Clear Sans-Serif font checks (check FIRST so Arial-Roman, Helvetica-Roman aren't misidentified as serif!)
+  if (
+    combined.includes('sans') ||
+    combined.includes('arial') ||
+    combined.includes('helvetica') ||
+    combined.includes('calibri') ||
+    combined.includes('roboto') ||
+    combined.includes('aptos') ||
+    combined.includes('segoe') ||
+    combined.includes('tahoma') ||
+    combined.includes('verdana') ||
+    combined.includes('trebuchet') ||
+    combined.includes('open') ||
+    combined.includes('lato') ||
+    combined.includes('inter') ||
+    combined.includes('gothic') ||
+    combined.includes('futura') ||
+    combined.includes('noto') ||
+    combined.includes('gill')
+  ) {
+    if (combined.includes('calibri')) {
+      return "'Calibri', 'Arial', sans-serif";
+    }
+    if (combined.includes('aptos')) {
+      return "'Aptos', 'Calibri', 'Arial', sans-serif";
+    }
+    if (combined.includes('roboto')) {
+      return "'Roboto', 'Segoe UI', 'Arial', sans-serif";
+    }
+    if (combined.includes('segoe')) {
+      return "'Segoe UI', 'Arial', sans-serif";
+    }
+    return "'Arial', 'Helvetica Neue', Helvetica, sans-serif";
+  }
+
+  // 3. Serif fonts
+  if (
+    combined.includes('times') ||
+    combined.includes('georgia') ||
+    combined.includes('cambria') ||
+    combined.includes('garamond') ||
+    combined.includes('baskerville') ||
+    combined.includes('palatino') ||
+    combined.includes('minion') ||
+    combined.includes('merriweather') ||
+    (combined.includes('serif') && !combined.includes('sans'))
+  ) {
+    if (combined.includes('georgia')) {
+      return "'Georgia', 'Times New Roman', serif";
+    }
+    if (combined.includes('cambria')) {
+      return "'Cambria', 'Georgia', serif";
+    }
+    if (combined.includes('garamond')) {
+      return "'Garamond', 'Georgia', serif";
+    }
+    return "'Times New Roman', 'Times', serif";
+  }
+
+  // 4. Default for modern documents/resumes is clean Sans-Serif
+  return "'Calibri', 'Arial', 'Helvetica Neue', Helvetica, sans-serif";
 }
 
 /**
@@ -580,9 +634,9 @@ export async function loadPdfPageForEditing(
     // Viewport coordinates
     const [vx, vy] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
     const fontHeight = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]) * scale;
-    const itemWidth = Math.max(item.width * scale * 1.05 + 6, 16);
-    const itemHeight = Math.max(fontHeight * 1.25, 16);
-    const itemTop = Math.max(0, vy - fontHeight);
+    const itemWidth = Math.max(item.width * scale * 1.02 + 4, 14);
+    const itemHeight = Math.max(fontHeight * 1.05, 12);
+    const itemTop = Math.max(0, vy - fontHeight * 0.92);
 
     const xPercent = (vx / viewport.width) * 100;
     const yPercent = (itemTop / viewport.height) * 100;
@@ -702,17 +756,17 @@ export async function exportEditedPdf(
 
           // Accurately measure new text width with font set
           const measuredWidth = ctx.measureText(newText).width;
-          const fillWidth = Math.max(iw, measuredWidth) + 12;
-          const fillHeight = Math.max(ih, scaledFontSize * 1.3) + 4;
+          const fillWidth = Math.max(iw, measuredWidth) + 4;
+          const fillHeight = Math.max(ih, scaledFontSize * 1.05);
 
-          // Whiteout old text area
+          // Whiteout old text area cleanly without bleeding into adjacent lines
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(ix - 3, iy - 2, fillWidth, fillHeight);
+          ctx.fillRect(ix - 1, iy, fillWidth, fillHeight);
 
           if (newText.trim()) {
             ctx.fillStyle = item.textColor || '#000000';
             ctx.textBaseline = 'top';
-            ctx.fillText(newText, ix, iy + scaledFontSize * 0.05);
+            ctx.fillText(newText, ix, iy);
           }
         }
       }
@@ -942,17 +996,17 @@ export async function exportPageAsImage(
 
           // Accurately measure new text width with font set
           const measuredWidth = ctx.measureText(replacement).width;
-          const fillWidth = Math.max(iw, measuredWidth) + 12;
-          const fillHeight = Math.max(ih, scaledFontSize * 1.3) + 4;
+          const fillWidth = Math.max(iw, measuredWidth) + 4;
+          const fillHeight = Math.max(ih, scaledFontSize * 1.05);
 
-          // Whiteout old text area
+          // Whiteout old text area cleanly without bleeding into adjacent lines
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(ix - 3, iy - 2, fillWidth, fillHeight);
+          ctx.fillRect(ix - 1, iy, fillWidth, fillHeight);
 
           if (replacement.trim()) {
             ctx.fillStyle = item.textColor || '#000000';
             ctx.textBaseline = 'top';
-            ctx.fillText(replacement, ix, iy + scaledFontSize * 0.05);
+            ctx.fillText(replacement, ix, iy);
           }
         }
       }
